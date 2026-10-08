@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+
+# Build output
+.next
+out
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment variables
+.env*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Local files
+*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+README.md
+.editorconfig
+.eslintrc.json
+.prettierrc
