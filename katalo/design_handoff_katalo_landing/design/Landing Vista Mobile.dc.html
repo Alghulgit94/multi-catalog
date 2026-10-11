@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F3F5F9;font-family:Figtree,system-ui,sans-serif;color:#13203B}a{color:#1F4FD8}a:hover{color:#183FB0}</style>
+</helmet>
+<div style="padding:48px;display:flex;flex-direction:column;gap:32px">
+  <div>
+    <div style="font:600 20px/1.2 Figtree,sans-serif">Landing · vista celular</div>
+    <div style="margin-top:6px;font:400 14px/1.5 Figtree,sans-serif;color:#556079">Refleja <a href="Landing Plataforma.dc.html">Landing Plataforma</a> en vivo. Versión guardada: <a href="Landing Plataforma v1 preliminar.dc.html">v1 preliminar</a>.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font:500 13px/1 Figtree,sans-serif;color:#556079">Celular interactivo · 390 × 844</div>
+      <div style="width:390px;height:844px;border-radius:44px;background:#13203B;padding:12px;box-shadow:0 32px 64px -24px rgba(19,32,59,.35)">
+        <iframe src="Landing Plataforma.dc.html" title="Landing en celular 390px" style="width:366px;height:820px;border:0;border-radius:32px;background:#FFFFFF;display:block"></iframe>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font:500 13px/1 Figtree,sans-serif;color:#556079">Celular chico · 360 × 760</div>
+      <div style="width:384px;height:784px;border-radius:40px;background:#13203B;padding:12px;box-shadow:0 32px 64px -24px rgba(19,32,59,.35)">
+        <iframe src="Landing Plataforma.dc.html" title="Landing en celular 360px" style="width:360px;height:760px;border:0;border-radius:28px;background:#FFFFFF;display:block"></iframe>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font:500 13px/1 Figtree,sans-serif;color:#556079">Página completa · 390 px</div>
+      <div style="width:390px;background:#FFFFFF;border:1px solid #DCE1EA;border-radius:12px;overflow:hidden">
+        <iframe ref="{{ fullRef }}" src="Landing Plataforma.dc.html" title="Landing completa en 390px" onLoad="{{ fit }}" style="width:390px;height:{{ fullH }}px;border:0;display:block"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { h: 900 };
+  fullRef = React.createRef();
+  measure = () => {
+    try {
+      const d = this.fullRef.current && this.fullRef.current.contentDocument;
+      if (!d || !d.body) return;
+      const h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
+      if (h && Math.abs(h - this.state.h) > 4) this.setState({ h });
+    } catch (e) {}
+  };
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    return {
+      fullRef: this.fullRef, fullH: this.state.h,
+      fit: () => { this.measure(); clearInterval(this.iv); let n = 0; this.iv = setInterval(() => { this.measure(); if (++n > 20) clearInterval(this.iv); }, 500); }
+    };
+  }
+}
+</script>
+</body>
+</html>

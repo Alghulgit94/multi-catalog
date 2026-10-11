@@ -129,6 +129,65 @@ export async function destroyCloudinaryAssets(storeId: string, publicIds: string
   )
 }
 
+/**
+ * Mueve un asset a otro public_id (p. ej. del borrador del onboarding a la
+ * carpeta de marca de la tienda). Devuelve el nuevo public_id, o null si falla.
+ */
+export async function renameCloudinaryAsset(fromPublicId: string, toPublicId: string): Promise<string | null> {
+  const apiKey = process.env.CLOUDINARY_API_KEY
+  const apiSecret = process.env.CLOUDINARY_API_SECRET
+  if (!apiKey || !apiSecret) return null
+
+  const timestamp = Math.floor(Date.now() / 1000)
+  // Params firmados, ordenados alfabéticamente.
+  const toSign =
+    `from_public_id=${fromPublicId}&invalidate=true&overwrite=true&timestamp=${timestamp}&to_public_id=${toPublicId}` +
+    apiSecret
+  const signature = createHash("sha1").update(toSign).digest("hex")
+
+  const form = new FormData()
+  form.append("from_public_id", fromPublicId)
+  form.append("to_public_id", toPublicId)
+  form.append("overwrite", "true")
+  form.append("invalidate", "true")
+  form.append("api_key", apiKey)
+  form.append("timestamp", String(timestamp))
+  form.append("signature", signature)
+
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/rename`, {
+      method: "POST",
+      body: form,
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error("[renameCloudinaryAsset] falló", fromPublicId, data)
+      return null
+    }
+    return (data?.public_id as string) ?? toPublicId
+  } catch (e) {
+    console.error("[renameCloudinaryAsset] error", fromPublicId, e)
+    return null
+  }
+}
+
+/** Borra un asset sin restricción de carpeta. Solo para borradores del onboarding (best-effort). */
+export async function destroyDraftAsset(publicId: string): Promise<void> {
+  if (!publicId.startsWith("drafts/")) return
+  try {
+    const signed = signDestroyParams(publicId)
+    const form = new FormData()
+    form.append("public_id", signed.public_id)
+    form.append("api_key", signed.api_key)
+    form.append("timestamp", String(signed.timestamp))
+    form.append("signature", signed.signature)
+    form.append("invalidate", "true")
+    await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`, { method: "POST", body: form })
+  } catch (e) {
+    console.error("[destroyDraftAsset] error borrando", publicId, e)
+  }
+}
+
 export type CloudinaryUploadOutcome =
   | { error: string; success?: undefined; public_id?: undefined; secure_url?: undefined }
   | { error?: undefined; success: true; public_id: string; secure_url: string }

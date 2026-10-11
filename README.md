@@ -18,7 +18,8 @@ Next.js 16 (App Router) · PostgreSQL en Supabase (solo como base de datos) · B
 
 | Ruta | Contenido |
 | --- | --- |
-| `/` | Web de la plataforma |
+| `/` | Landing de Katalo (marketing, estática) |
+| `/terminos`, `/privacidad` | Páginas legales (contenido pendiente) |
 | `/login`, `/registro` | Acceso de los comercios |
 | `/panel/*` | Panel del comercio (`app/(admin)/panel`) |
 | `/admin` | Panel de superadmin |
@@ -28,6 +29,7 @@ Next.js 16 (App Router) · PostgreSQL en Supabase (solo como base de datos) · B
 - `lib/auth/`: Better Auth (`server.ts`, `client.ts`) y sesión/tienda del usuario (`session.ts`).
 - `lib/reserved-slugs.ts`: nombres de tienda reservados y validación del slug.
 - `lib/store-links.ts`: única función que genera links de tienda.
+- `config/`: contenido editorial de la landing (planes, casos, preguntas, textos de plataforma) — ver `docs/katalo-brand.md`.
 - `db/`: esquema y datos de demostración.
 
 ## Estado de la etapa 1

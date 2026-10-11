@@ -17,6 +17,9 @@ export const RESERVED_STORE_SLUGS: readonly string[] = [
   "privacidad",
   "blog",
   "contacto",
+  "katalo",
+  "_next",
+  "onboarding",
 ]
 
 export const STORE_SLUG_MIN = 3

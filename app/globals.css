@@ -210,6 +210,126 @@
   }
 }
 
+/* ============================================================
+ * Tokens de marca Katalo — SOLO para la landing (`app/page.tsx`)
+ * y las páginas legales (`/terminos`, `/privacidad`).
+ * No reutilizar en el panel, login/registro ni en el catálogo
+ * de tienda: esas rutas siguen con el tema genérico de arriba.
+ * Fuente: katalo/design_handoff_katalo_landing/tokens/*
+ * ============================================================ */
+:root {
+  --tinta: #13203b;
+  --texto-secundario: #556079;
+  --fondo-alterno: #f3f5f9;
+  --linea: #dce1ea;
+  --primario: #1f4fd8;
+  --primario-hover: #183fb0;
+  --nanduti-fucsia: #e0457b;
+  --nanduti-amarillo: #f5b82e;
+  --nanduti-verde: #2e9e6a;
+  --whatsapp: #25d366;
+  --tinte-amarillo: #fef3d9;
+  --tinte-verde: #e2f2ea;
+  --tinte-fucsia: #fce6ee;
+  --texto-sobre-tinta: #c9d0dd;
+
+  --radio-boton: 12px;
+  --radio-plan: 12px;
+  --radio-celular: 28px;
+  --radio-foto: 8px;
+  --radio-escenario: 24px;
+  --sombra-celular: 0 32px 64px -24px rgba(19, 32, 59, 0.35), 0 4px 12px rgba(19, 32, 59, 0.08);
+  --sombra-whatsapp: 0 8px 20px -6px rgba(19, 32, 59, 0.35);
+
+  --t-hero: clamp(40px, 5.4vw, 64px);
+  --t-seccion: clamp(30px, 3.6vw, 40px);
+  --t-bloque: clamp(20px, 2vw, 24px);
+  --t-cuerpo: clamp(16px, 1.5vw, 18px);
+}
+
+/* --font-bricolage/--font-figtree solo existen en el div .katalo (los define la
+   clase .variable de next/font ahí mismo, ver components/landing/fonts.ts) — por
+   eso --fuente-titulos/--fuente-cuerpo se declaran también en .katalo, no en
+   :root: :root es ANCESTRO de .katalo y no puede resolver una variable que solo
+   existe en un descendiente. Nombre propio (no "--font-titulos"/"--font-cuerpo")
+   porque Tailwind ya usa esos nombres para su propio token de @theme. */
+.katalo {
+  --fuente-titulos: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --fuente-cuerpo: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@theme inline {
+  --color-tinta: var(--tinta);
+  --color-texto-secundario: var(--texto-secundario);
+  --color-fondo-alterno: var(--fondo-alterno);
+  --color-linea: var(--linea);
+  --color-primario: var(--primario);
+  --color-primario-hover: var(--primario-hover);
+  --color-nanduti-fucsia: var(--nanduti-fucsia);
+  --color-nanduti-amarillo: var(--nanduti-amarillo);
+  --color-nanduti-verde: var(--nanduti-verde);
+  --color-whatsapp: var(--whatsapp);
+  --color-tinte-amarillo: var(--tinte-amarillo);
+  --color-tinte-verde: var(--tinte-verde);
+  --color-tinte-fucsia: var(--tinte-fucsia);
+  --color-texto-sobre-tinta: var(--texto-sobre-tinta);
+
+  --font-titulos: var(--fuente-titulos);
+  --font-cuerpo: var(--fuente-cuerpo);
+
+  --radius-boton: var(--radio-boton);
+  --radius-plan: var(--radio-plan);
+  --radius-celular: var(--radio-celular);
+  --radius-foto: var(--radio-foto);
+  --radius-escenario: var(--radio-escenario);
+
+  --shadow-celular: var(--sombra-celular);
+  --shadow-whatsapp: var(--sombra-whatsapp);
+
+  --max-width-contenido: 1200px;
+}
+
+@layer components {
+  .katalo .t-hero {
+    font: 700 var(--t-hero) / 1.05 var(--fuente-titulos);
+    letter-spacing: -0.025em;
+  }
+  .katalo .t-seccion {
+    font: 700 var(--t-seccion) / 1.1 var(--fuente-titulos);
+    letter-spacing: -0.02em;
+  }
+  .katalo .t-bloque {
+    font: 600 var(--t-bloque) / 1.25 var(--fuente-titulos);
+  }
+  .katalo .t-cuerpo {
+    font: 400 var(--t-cuerpo) / 1.6 var(--fuente-cuerpo);
+    max-width: 65ch;
+  }
+  .katalo .t-chico {
+    font: 400 14px / 1.5 var(--fuente-cuerpo);
+  }
+  .katalo .t-boton {
+    font: 600 16px / 1 var(--fuente-cuerpo);
+  }
+  .katalo-seccion {
+    padding-block: clamp(72px, 10vw, 120px);
+    padding-inline: 24px;
+  }
+}
+
+/* Base de la landing (igual que el <style> de Landing Plataforma.dc.html) */
+html:has(.katalo) {
+  scroll-behavior: smooth;
+}
+.katalo {
+  -webkit-font-smoothing: antialiased;
+}
+.katalo :focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 /* Custom Animations for Login */
 @keyframes float {
   0%, 100% {
@@ -254,5 +374,78 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+ * Onboarding (/registro): transiciones suaves y discretas.
+ * Solo opacity/transform. --ob-dir: 1 avanza, -1 retrocede.
+ * ============================================================ */
+.ob-paso[data-fase="out"] {
+  opacity: 0;
+  transform: translateX(calc(var(--ob-dir, 1) * -12px));
+  transition: opacity 160ms ease-in, transform 160ms ease-in;
+}
+.ob-paso[data-fase="in"] {
+  animation: ob-in 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes ob-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--ob-dir, 1) * 14px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ob-fade {
+  animation: ob-fade 220ms ease-out both;
+}
+@keyframes ob-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ob-escalonado > * {
+  animation: ob-subir 280ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes ob-subir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ob-relleno {
+  transform-origin: left;
+  transition: transform 300ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-paso[data-fase="out"] {
+    transform: none;
+  }
+  @keyframes ob-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes ob-subir {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }

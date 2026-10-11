@@ -55,6 +55,9 @@ create table stores (
 
   -- Etapa 2: planes (reservado, sin FK todavía)
   plan_id               uuid,
+  -- Plan elegido en el onboarding ('gratis' | 'emprendedor' | 'negocio'). Es una
+  -- intención: los planes pagos se cobran por fuera (asesor o transferencia).
+  plan_intent           text,
 
   -- Verificación
   terms_accepted_at     timestamptz,
@@ -189,6 +192,25 @@ insert into system_settings (key, value) values
   ('verification_days', '7'),
   ('review_mode', '"manual"');
 
+-- ─── Borradores del onboarding ───────────────────────────────────────────────
+-- El visitante arma su tienda (nombre, logo, WhatsApp, plan) antes de crear la
+-- cuenta. El id viaja en una cookie httpOnly; al registrarse el borrador se
+-- convierte en tienda y queda marcado como reclamado.
+
+create table onboarding_drafts (
+  id              uuid primary key default gen_random_uuid(),
+  data            jsonb not null default '{}'::jsonb,
+  logo_public_id  text,
+  expires_at      timestamptz not null default (now() + interval '7 days'),
+  claimed_at      timestamptz,
+  claimed_by      text,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create index onboarding_drafts_expires_idx on onboarding_drafts (expires_at);
+create trigger onboarding_drafts_updated_at before update on onboarding_drafts
+  for each row execute function set_updated_at();
+
 -- ─── RLS: activado sin políticas (solo la service role accede) ───────────────
 
 alter table stores          enable row level security;
@@ -199,3 +221,4 @@ alter table products        enable row level security;
 alter table product_images  enable row level security;
 alter table review_history  enable row level security;
 alter table system_settings enable row level security;
+alter table onboarding_drafts enable row level security;

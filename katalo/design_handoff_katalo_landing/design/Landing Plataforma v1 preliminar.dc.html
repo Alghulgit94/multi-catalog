@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html{scroll-behavior:smooth}
+body{margin:0;background:#FFFFFF;color:#13203B;font-family:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#1F4FD8;text-decoration:none}
+a:hover{color:#183FB0}
+:focus-visible{outline:2px solid #1F4FD8;outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;overflow-x:hidden">
+
+<header style="position:sticky;top:0;z-index:50;background:#FFFFFF;border-bottom:1px solid {{ headerBorder }};transition:border-color .2s">
+  <div style="max-width:1248px;margin:0 auto;padding:0 24px;height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <a href="#top" style="display:flex;align-items:center;gap:10px;color:#13203B">
+      <span style="width:28px;height:28px;border-radius:8px;background:#1F4FD8;display:grid;place-items:center;color:#FFFFFF;font:700 16px/1 'Bricolage Grotesque',sans-serif">{{ initial }}</span>
+      <span style="font:700 20px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.01em">{{ name }}</span>
+    </a>
+    <sc-if value="{{ isDesktopNav }}" hint-placeholder-val="{{ true }}">
+      <nav aria-label="Principal" style="display:flex;align-items:center;gap:32px">
+        <a href="#como-funciona" onClick="{{ navClick }}" style="color:#13203B;font:500 16px/1 Figtree,sans-serif" style-hover="color:#1F4FD8">Cómo funciona</a>
+        <a href="#planes" onClick="{{ navClick }}" style="color:#13203B;font:500 16px/1 Figtree,sans-serif" style-hover="color:#1F4FD8">Planes</a>
+        <a href="#preguntas" onClick="{{ navClick }}" style="color:#13203B;font:500 16px/1 Figtree,sans-serif" style-hover="color:#1F4FD8">Preguntas</a>
+      </nav>
+    </sc-if>
+    <div style="display:flex;align-items:center;gap:12px">
+      <sc-if value="{{ isDesktopNav }}" hint-placeholder-val="{{ true }}">
+        <a href="/login" style="color:#13203B;font:600 16px/1 Figtree,sans-serif;padding:0 8px" style-hover="color:#1F4FD8">Iniciar sesión</a>
+      </sc-if>
+      <a href="/registro" onClick="{{ ctaHeader }}" style="height:{{ headerBtnH }};padding:0 {{ headerBtnPad }};display:inline-flex;align-items:center;background:#1F4FD8;color:#FFFFFF;border-radius:12px;font:600 {{ headerBtnFs }}/1 Figtree,sans-serif;white-space:nowrap" style-hover="background:#183FB0;color:#FFFFFF">Crear mi catálogo</a>
+      <sc-if value="{{ isMobileNav }}" hint-placeholder-val="{{ false }}">
+        <button type="button" aria-label="Menú" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}" style="width:44px;height:44px;display:grid;place-items:center;background:transparent;border:0;color:#13203B;cursor:pointer;padding:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="{{ menuIconPath }}"></path></svg>
+        </button>
+      </sc-if>
+    </div>
+  </div>
+  <sc-if value="{{ showMobileMenu }}" hint-placeholder-val="{{ false }}">
+    <nav aria-label="Menú móvil" style="border-top:1px solid #DCE1EA;background:#FFFFFF;padding:8px 24px 24px;display:flex;flex-direction:column">
+      <a href="#como-funciona" onClick="{{ navClick }}" style="color:#13203B;font:500 18px/1 Figtree,sans-serif;padding:16px 0;border-bottom:1px solid #DCE1EA">Cómo funciona</a>
+      <a href="#planes" onClick="{{ navClick }}" style="color:#13203B;font:500 18px/1 Figtree,sans-serif;padding:16px 0;border-bottom:1px solid #DCE1EA">Planes</a>
+      <a href="#preguntas" onClick="{{ navClick }}" style="color:#13203B;font:500 18px/1 Figtree,sans-serif;padding:16px 0;border-bottom:1px solid #DCE1EA">Preguntas</a>
+      <a href="/login" style="color:#13203B;font:600 18px/1 Figtree,sans-serif;padding:16px 0">Iniciar sesión</a>
+    </nav>
+  </sc-if>
+</header>
+
+<main id="top">
+
+<section data-screen-label="02 Hero" style="position:relative;padding:clamp(40px,7vw,96px) 24px clamp(72px,9vw,120px);overflow:hidden">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(56px,6vw,80px);align-items:center">
+    <div style="max-width:560px;position:relative;z-index:2">
+      <h1 style="margin:0;font:700 clamp(40px,5.4vw,64px)/1.05 'Bricolage Grotesque',sans-serif;letter-spacing:-0.025em;color:#13203B;text-wrap:balance">Tu catálogo en un link. Tus ventas por WhatsApp.</h1>
+      <p style="margin:24px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079;max-width:30em;text-wrap:pretty">Cargá tus productos con fotos y precios, compartí un solo link y recibí las consultas en tu WhatsApp con el producto ya elegido.</p>
+      <div style="margin-top:40px;display:flex;flex-direction:column;align-items:{{ heroBtnAlign }};gap:12px">
+        <a href="/registro" onClick="{{ ctaHero }}" style="height:48px;padding:0 28px;display:inline-flex;align-items:center;justify-content:center;background:#1F4FD8;color:#FFFFFF;border-radius:12px;font:600 16px/1 Figtree,sans-serif" style-hover="background:#183FB0;color:#FFFFFF">Crear mi catálogo gratis</a>
+        <span style="font:400 14px/1.4 Figtree,sans-serif;color:#556079">Gratis hasta 10 productos. Sin tarjeta.</span>
+      </div>
+    </div>
+
+    <div style="position:relative;display:flex;justify-content:center;min-height:600px;align-items:center">
+      <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:{{ ndSize }}px;height:{{ ndSize }}px;transform:translate(-50%,-50%);pointer-events:none;z-index:0">{{ nandutiHero }}</div>
+
+      <div style="position:relative;z-index:1;width:280px;height:580px;border-radius:28px;background:#13203B;padding:9px;box-shadow:0 32px 64px -24px rgba(19,32,59,.35),0 4px 12px rgba(19,32,59,.08)">
+        <div style="width:100%;height:100%;border-radius:20px;background:#FFFFFF;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font:600 11px/1 Figtree,sans-serif;color:#13203B"><span>9:41</span><span style="width:56px;height:16px;border-radius:10px;background:#13203B"></span><span>100%</span></div>
+          <div style="padding:8px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #DCE1EA">
+            <img src="https://www.ughogar.com/img/brand/ug-logo.png" alt="UG Hogar" style="width:34px;height:34px;object-fit:contain;border-radius:8px;border:1px solid #DCE1EA;background:#FFFFFF"></img>
+            <div style="min-width:0">
+              <div style="font:700 14px/1.2 'Bricolage Grotesque',sans-serif;color:#13203B">UG Hogar</div>
+              <div style="font:400 10px/1.3 Figtree,sans-serif;color:#556079">{{ slugLink }}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;padding:10px 14px;overflow:hidden">
+            <span style="flex:none;padding:5px 10px;border-radius:999px;background:#13203B;color:#FFFFFF;font:600 10px/1 Figtree,sans-serif">Todo</span>
+            <span style="flex:none;padding:5px 10px;border-radius:999px;border:1px solid #DCE1EA;font:500 10px/1 Figtree,sans-serif;color:#13203B">Sofá</span>
+            <span style="flex:none;padding:5px 10px;border-radius:999px;border:1px solid #DCE1EA;font:500 10px/1 Figtree,sans-serif;color:#13203B">Decoración</span>
+            <span style="flex:none;padding:5px 10px;border-radius:999px;border:1px solid #DCE1EA;font:500 10px/1 Figtree,sans-serif;color:#13203B">Espejos</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;padding:2px 14px 14px">
+            <sc-for list="{{ heroProducts }}" as="p" hint-placeholder-count="4">
+              <div>
+                <img src="{{ p.img }}" alt="{{ p.name }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#F3F5F9;display:block"></img>
+                <div style="margin-top:6px;font:500 11px/1.25 Figtree,sans-serif;color:#13203B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                <div style="font:700 11px/1.4 Figtree,sans-serif;color:#13203B">{{ p.price }}</div>
+                <div style="margin-top:5px;height:22px;border-radius:6px;border:1px solid #13203B;display:grid;place-items:center;font:600 10px/1 Figtree,sans-serif;color:#13203B">Consultar</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div role="img" aria-label="Mensaje de WhatsApp recibido: consulta por la Poltrona" style="position:absolute;z-index:3;left:{{ bLeft }};bottom:72px;width:252px;background:#FFFFFF;border:1px solid #DCE1EA;border-radius:14px 14px 14px 4px;padding:12px;opacity:{{ bOp }};transform:translateY({{ bY }});transition:{{ bTr }}">
+        <div style="display:flex;align-items:center;gap:6px;font:600 11px/1 Figtree,sans-serif;color:#556079;margin-bottom:10px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#13203B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+          Nueva consulta por WhatsApp
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <img src="{{ heroMain.img }}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:#F3F5F9"></img>
+          <p style="margin:0;font:400 13px/1.45 Figtree,sans-serif;color:#13203B">{{ heroMessage }}</p>
+        </div>
+        <div style="margin-top:6px;text-align:right;font:400 10px/1 Figtree,sans-serif;color:#556079">10:24</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="03 Tiendas" aria-labelledby="tiendas-t" style="padding:40px 24px;border-top:1px solid #DCE1EA;border-bottom:1px solid #DCE1EA">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px 56px">
+    <h2 id="tiendas-t" style="margin:0;font:500 16px/1.4 Figtree,sans-serif;color:#556079">Ya venden con {{ name }}</h2>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:24px 48px">
+      <sc-for list="{{ cases }}" as="c" hint-placeholder-count="2">
+        <a href="{{ c.url }}" target="_blank" rel="noopener" onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;color:#13203B;height:48px" style-hover="opacity:.7">
+          <sc-if value="{{ c.logo }}" hint-placeholder-val="{{ true }}">
+            <img src="{{ c.logo }}" alt="{{ c.name }}" style="height:40px;width:auto;max-width:120px;object-fit:contain"></img>
+          </sc-if>
+          <sc-if value="{{ c.noLogo }}" hint-placeholder-val="{{ false }}">
+            <span style="height:40px;padding:0 14px;display:grid;place-items:center;border:1.5px dashed #DCE1EA;border-radius:8px;font:500 12px/1 Figtree,sans-serif;color:#556079">logo</span>
+          </sc-if>
+          <span style="font:600 18px/1 'Bricolage Grotesque',sans-serif">{{ c.name }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="04 Problema" aria-labelledby="problema-t" style="padding:clamp(72px,10vw,120px) 24px">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="max-width:680px">
+      <h2 id="problema-t" style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;text-wrap:balance">Dejá de mandar fotos una por una.</h2>
+      <p style="margin:20px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079;text-wrap:pretty">Cada cliente pregunta lo mismo: qué tenés, cuánto sale, si hay en otro color. Con tu catálogo, ve todo en un lugar y te escribe cuando ya eligió.</p>
+    </div>
+    <div style="margin-top:64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:0">
+      <div style="padding:32px 0;border-top:1.5px solid #DCE1EA;padding-right:clamp(0px,4vw,56px)">
+        <h3 style="margin:0 0 24px;font:600 clamp(20px,2vw,24px)/1.2 'Bricolage Grotesque',sans-serif;color:#556079">Hoy</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:360px">
+          <span style="align-self:flex-start;padding:10px 14px;background:#F3F5F9;border-radius:14px 14px 14px 4px;font:400 15px/1.4 Figtree,sans-serif">¿Qué tenés en espejos?</span>
+          <div style="align-self:flex-end;display:flex;gap:6px">
+            <sc-for list="{{ chatPhotos }}" as="p" hint-placeholder-count="3">
+              <img src="{{ p.img }}" alt="{{ p.name }}" style="width:64px;height:64px;border-radius:8px;object-fit:cover;background:#F3F5F9"></img>
+            </sc-for>
+          </div>
+          <span style="align-self:flex-start;padding:10px 14px;background:#F3F5F9;border-radius:14px 14px 14px 4px;font:400 15px/1.4 Figtree,sans-serif">¿Cuánto sale el segundo?</span>
+          <span style="align-self:flex-end;padding:10px 14px;background:#DCE1EA;border-radius:14px 14px 4px 14px;font:400 15px/1.4 Figtree,sans-serif">Gs. 300.000</span>
+          <span style="align-self:flex-start;padding:10px 14px;background:#F3F5F9;border-radius:14px 14px 14px 4px;font:400 15px/1.4 Figtree,sans-serif">¿Y hay en otro tamaño?</span>
+        </div>
+      </div>
+      <div style="padding:32px 0;border-top:1.5px solid #13203B">
+        <h3 style="margin:0 0 24px;font:600 clamp(20px,2vw,24px)/1.2 'Bricolage Grotesque',sans-serif;color:#13203B">Con tu catálogo</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;max-width:400px">
+          <span style="align-self:flex-end;padding:12px 16px;background:#13203B;color:#FFFFFF;border-radius:14px 14px 4px 14px;font:500 15px/1.4 Figtree,sans-serif">Mirá todo acá: <span style="text-decoration:underline;text-underline-offset:3px">{{ slugLink }}</span></span>
+          <p style="margin:0;font:400 16px/1.6 Figtree,sans-serif;color:#556079">Un mensaje. Tu cliente recorre fotos, precios y categorías solo, y te escribe cuando ya sabe qué quiere.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona" data-screen-label="05 Cómo funciona" aria-labelledby="como-t" style="padding:clamp(72px,10vw,120px) 24px;background:#F3F5F9;scroll-margin-top:72px">
+  <div style="max-width:1200px;margin:0 auto">
+    <h2 id="como-t" style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em">Así de simple.</h2>
+    <ol style="list-style:none;margin:56px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:40px 48px">
+      <li style="border-top:1.5px solid #13203B;padding-top:24px">
+        <span style="display:block;font:700 56px/1 'Bricolage Grotesque',sans-serif;color:#1F4FD8;letter-spacing:-0.03em">01</span>
+        <h3 style="margin:24px 0 8px;font:600 clamp(20px,2vw,24px)/1.25 'Bricolage Grotesque',sans-serif">Creá tu cuenta en un minuto.</h3>
+        <p style="margin:0;font:400 16px/1.6 Figtree,sans-serif;color:#556079">Con tu correo y el nombre de tu negocio.</p>
+      </li>
+      <li style="border-top:1.5px solid #13203B;padding-top:24px">
+        <span style="display:block;font:700 56px/1 'Bricolage Grotesque',sans-serif;color:#1F4FD8;letter-spacing:-0.03em">02</span>
+        <h3 style="margin:24px 0 8px;font:600 clamp(20px,2vw,24px)/1.25 'Bricolage Grotesque',sans-serif">Cargá tus productos con fotos, precios y categorías.</h3>
+        <p style="margin:0;font:400 16px/1.6 Figtree,sans-serif;color:#556079">Desde el celular, sacando la foto en el momento.</p>
+      </li>
+      <li style="border-top:1.5px solid #13203B;padding-top:24px">
+        <span style="display:block;font:700 56px/1 'Bricolage Grotesque',sans-serif;color:#1F4FD8;letter-spacing:-0.03em">03</span>
+        <h3 style="margin:24px 0 8px;font:600 clamp(20px,2vw,24px)/1.25 'Bricolage Grotesque',sans-serif">Compartí tu link en WhatsApp, Instagram o donde vendas.</h3>
+        <p style="margin:0;font:400 16px/1.6 Figtree,sans-serif;color:#556079">En tu estado, tu bio o directo al cliente.</p>
+      </li>
+    </ol>
+    <div style="margin-top:56px;display:flex">
+      <a href="/registro" onClick="{{ ctaSteps }}" style="height:48px;padding:0 28px;display:inline-flex;align-items:center;justify-content:center;background:#1F4FD8;color:#FFFFFF;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#183FB0;color:#FFFFFF">Empezar ahora</a>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="06 Beneficios" aria-label="Beneficios" style="padding:clamp(72px,10vw,120px) 24px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(88px,11vw,144px)">
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:56px;align-items:center">
+      <div style="max-width:480px">
+        <h2 style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;text-wrap:balance">Todo tu negocio en un link.</h2>
+        <p style="margin:20px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079;text-wrap:pretty">Categorías, subcategorías y varias fotos por producto, ordenado como una vidriera.</p>
+        <p style="margin:20px 0 0;font:500 16px/1.4 Figtree,sans-serif;color:#13203B">Tu link: <span style="color:#1F4FD8">{{ domain }}/tu-tienda</span></p>
+        <a href="/registro" onClick="{{ ctaBen1 }}" style="margin-top:32px;height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #13203B;color:#13203B;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#13203B;color:#FFFFFF">Armar mi vidriera</a>
+      </div>
+      <div style="display:flex;justify-content:center;order:{{ revOrderA }}">
+        <div style="width:280px;height:540px;border-radius:28px;background:#13203B;padding:9px;box-shadow:0 32px 64px -24px rgba(19,32,59,.35),0 4px 12px rgba(19,32,59,.08)">
+          <div style="width:100%;height:100%;border-radius:20px;background:#FFFFFF;overflow:hidden">
+            <div style="padding:20px 16px 12px;border-bottom:1px solid #DCE1EA">
+              <div style="font:500 10px/1 Figtree,sans-serif;color:#556079">Decoración</div>
+              <div style="margin-top:6px;font:700 18px/1.1 'Bricolage Grotesque',sans-serif">Floreros y jarrones</div>
+            </div>
+            <div style="display:flex;gap:6px;padding:10px 16px">
+              <span style="padding:5px 10px;border-radius:999px;background:#13203B;color:#FFFFFF;font:600 10px/1 Figtree,sans-serif">Floreros</span>
+              <span style="padding:5px 10px;border-radius:999px;border:1px solid #DCE1EA;font:500 10px/1 Figtree,sans-serif">Cuadros</span>
+              <span style="padding:5px 10px;border-radius:999px;border:1px solid #DCE1EA;font:500 10px/1 Figtree,sans-serif">Velas</span>
+            </div>
+            <img src="{{ benMain.img }}" alt="{{ benMain.name }}" style="display:block;margin:4px 16px 0;width:calc(100% - 32px);aspect-ratio:1;object-fit:cover;border-radius:8px;background:#F3F5F9"></img>
+            <div style="display:flex;gap:6px;padding:8px 16px">
+              <sc-for list="{{ benThumbs }}" as="t" hint-placeholder-count="3">
+                <img src="{{ t.img }}" alt="{{ t.name }}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;border:{{ t.border }};background:#F3F5F9"></img>
+              </sc-for>
+            </div>
+            <div style="padding:4px 16px">
+              <div style="font:600 14px/1.3 Figtree,sans-serif">{{ benMain.name }}</div>
+              <div style="font:700 14px/1.5 Figtree,sans-serif">{{ benMain.price }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:56px;align-items:center">
+      <div style="max-width:480px">
+        <h2 style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;text-wrap:balance">Consultas que llegan listas.</h2>
+        <p style="margin:20px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079;text-wrap:pretty">Tu cliente toca “Consultar” y te escribe por WhatsApp con el nombre, la foto y el precio del producto. Respondés y cerrás.</p>
+        <a href="/registro" onClick="{{ ctaBen2 }}" style="margin-top:32px;height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #13203B;color:#13203B;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#13203B;color:#FFFFFF">Recibir consultas así</a>
+      </div>
+      <div style="display:flex;justify-content:center;order:{{ revOrderB }}">
+        <div style="width:280px;height:540px;border-radius:28px;background:#13203B;padding:9px;box-shadow:0 32px 64px -24px rgba(19,32,59,.35),0 4px 12px rgba(19,32,59,.08)">
+          <div style="width:100%;height:100%;border-radius:20px;background:#F3F5F9;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:20px 14px 12px;background:#FFFFFF;border-bottom:1px solid #DCE1EA;display:flex;align-items:center;gap:10px">
+              <span style="width:32px;height:32px;border-radius:50%;background:#DCE1EA;display:grid;place-items:center;font:600 12px/1 Figtree,sans-serif;color:#13203B">MG</span>
+              <div><div style="font:600 13px/1.2 Figtree,sans-serif">María G.</div><div style="font:400 10px/1.3 Figtree,sans-serif;color:#556079">en línea</div></div>
+            </div>
+            <div style="flex:1;padding:16px 12px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px">
+              <div style="align-self:flex-start;max-width:86%;background:#FFFFFF;border-radius:12px 12px 12px 4px;padding:8px;border:1px solid #DCE1EA">
+                <img src="{{ chatProduct.img }}" alt="{{ chatProduct.name }}" style="display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#F3F5F9"></img>
+                <div style="margin-top:8px;font:700 12px/1.3 Figtree,sans-serif">{{ chatProduct.name }}</div>
+                <div style="font:500 12px/1.4 Figtree,sans-serif;color:#556079">{{ chatProduct.price }}</div>
+                <div style="margin-top:6px;font:400 12px/1.45 Figtree,sans-serif">Hola, me interesa este producto. ¿Está disponible?</div>
+                <div style="text-align:right;font:400 9px/1 Figtree,sans-serif;color:#556079;margin-top:4px">15:02</div>
+              </div>
+              <div style="align-self:flex-end;max-width:80%;background:#13203B;color:#FFFFFF;border-radius:12px 12px 4px 12px;padding:8px 10px;font:400 12px/1.45 Figtree,sans-serif">¡Sí! Te lo reservo. ¿Retirás o te lo enviamos?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:56px;align-items:center">
+      <div style="max-width:480px">
+        <h2 style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;text-wrap:balance">Fotos y descripciones con IA.</h2>
+        <p style="margin:20px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079;text-wrap:pretty">A partir de una foto, generá otras vistas del producto o una foto en ambiente, y escribí nombre y descripción en segundos.</p>
+        <a href="/registro" onClick="{{ ctaBen3 }}" style="margin-top:32px;height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #13203B;color:#13203B;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#13203B;color:#FFFFFF">Probar con mis fotos</a>
+      </div>
+      <div style="display:flex;justify-content:center;order:{{ revOrderA }}">
+        <div style="width:100%;max-width:460px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <figure style="margin:0;grid-row:span 2">
+            <img src="{{ aiProduct.img }}" alt="{{ aiProduct.name }}, foto original" style="display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#F3F5F9"></img>
+            <figcaption style="margin-top:8px;font:400 14px/1.4 Figtree,sans-serif;color:#556079">Tu foto</figcaption>
+          </figure>
+          <figure style="margin:0">
+            <div style="aspect-ratio:4/3;border-radius:8px;border:1.5px dashed #DCE1EA;display:grid;place-items:center;padding:12px;text-align:center;font:500 12px/1.4 Figtree,sans-serif;color:#556079">Captura real: foto en ambiente</div>
+            <figcaption style="margin-top:8px;font:400 14px/1.4 Figtree,sans-serif;color:#556079">En ambiente, con IA</figcaption>
+          </figure>
+          <div style="border-top:1.5px solid #13203B;padding-top:12px">
+            <div style="font:600 14px/1.3 Figtree,sans-serif">{{ aiProduct.name }}</div>
+            <p style="margin:6px 0 0;font:400 13px/1.5 Figtree,sans-serif;color:#556079">Lámpara de mesa con pantalla de tela y base liviana. Luz cálida para el living o la mesa de luz.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section data-screen-label="07 Casos" aria-labelledby="casos-t" style="padding:clamp(72px,10vw,120px) 24px;background:#F3F5F9">
+  <div style="max-width:1200px;margin:0 auto">
+    <h2 id="casos-t" style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em">Comercios que ya venden así.</h2>
+    <div style="margin-top:56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:64px 48px">
+      <sc-for list="{{ cases }}" as="c" hint-placeholder-count="2">
+        <article style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <sc-for list="{{ c.photos }}" as="ph" hint-placeholder-count="6">
+              <img src="{{ ph.img }}" alt="{{ ph.name }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#DCE1EA;display:block"></img>
+            </sc-for>
+            <sc-for list="{{ c.slots }}" as="s" hint-placeholder-count="0">
+              <div style="aspect-ratio:1;border-radius:8px;border:1.5px dashed #DCE1EA;background:#FFFFFF;display:grid;place-items:center;font:500 11px/1.3 Figtree,sans-serif;color:#556079;text-align:center;padding:8px">Foto de producto</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <sc-if value="{{ c.logo }}" hint-placeholder-val="{{ true }}">
+              <img src="{{ c.logo }}" alt="Logo de {{ c.name }}" style="width:48px;height:48px;object-fit:contain;background:#FFFFFF;border-radius:8px;border:1px solid #DCE1EA"></img>
+            </sc-if>
+            <sc-if value="{{ c.noLogo }}" hint-placeholder-val="{{ false }}">
+              <span style="width:48px;height:48px;border-radius:8px;border:1.5px dashed #DCE1EA;background:#FFFFFF;display:grid;place-items:center;font:500 10px/1 Figtree,sans-serif;color:#556079">logo</span>
+            </sc-if>
+            <div>
+              <h3 style="margin:0;font:600 clamp(20px,2vw,24px)/1.2 'Bricolage Grotesque',sans-serif">{{ c.name }}</h3>
+              <div style="font:400 14px/1.4 Figtree,sans-serif;color:#556079">{{ c.rubro }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ c.showQuote }}" hint-placeholder-val="{{ false }}">
+            <blockquote style="margin:0;padding-left:0;font:500 18px/1.55 Figtree,sans-serif;color:#13203B">
+              <p style="margin:0">{{ c.quote }}</p>
+              <footer style="margin-top:12px;font:400 14px/1.4 Figtree,sans-serif;color:#556079">{{ c.owner }}</footer>
+            </blockquote>
+          </sc-if>
+          <sc-if value="{{ c.showQuotePlaceholder }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px dashed #DCE1EA;border-radius:8px;padding:16px;font:400 14px/1.5 Figtree,sans-serif;color:#556079;background:#FFFFFF">Testimonio del dueño, con nombre y foto — se muestra solo cuando esté escrito y aprobado por él.</div>
+          </sc-if>
+          <div>
+            <a href="{{ c.url }}" target="_blank" rel="noopener" onClick="{{ c.onClick }}" style="height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #13203B;color:#13203B;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#13203B;color:#FFFFFF">Ver su catálogo</a>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="planes" data-screen-label="08 Planes" aria-labelledby="planes-t" style="padding:clamp(72px,10vw,120px) 24px;scroll-margin-top:72px">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:32px">
+      <div style="max-width:620px">
+        <h2 id="planes-t" style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;text-wrap:balance">Empezá gratis. Crecé cuando lo necesites.</h2>
+        <p style="margin:16px 0 0;font:400 clamp(16px,1.5vw,18px)/1.6 Figtree,sans-serif;color:#556079">Sin comisiones por venta. Cancelás cuando quieras.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div role="radiogroup" aria-label="Período de facturación" onKeyDown="{{ periodKey }}" style="display:inline-flex;padding:4px;border:1px solid #DCE1EA;border-radius:12px;background:#FFFFFF">
+          <button type="button" role="radio" aria-checked="{{ isMonthly }}" tabindex="{{ tabMonthly }}" onClick="{{ setMonthly }}" style="height:40px;padding:0 18px;border:0;border-radius:9px;cursor:pointer;font:600 15px/1 Figtree,sans-serif;background:{{ monthlyBg }};color:{{ monthlyFg }}">Mensual</button>
+          <button type="button" role="radio" aria-checked="{{ isAnnual }}" tabindex="{{ tabAnnual }}" onClick="{{ setAnnual }}" style="height:40px;padding:0 18px;border:0;border-radius:9px;cursor:pointer;font:600 15px/1 Figtree,sans-serif;background:{{ annualBg }};color:{{ annualFg }}">Anual</button>
+        </div>
+        <span style="font:600 14px/1 Figtree,sans-serif;color:#2E9E6A;opacity:{{ annualNoteOp }}">2 meses gratis</span>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px;align-items:stretch">
+      <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
+        <div style="position:relative;border:{{ pl.border }};border-radius:12px;padding:32px 28px;display:flex;flex-direction:column;background:#FFFFFF">
+          <sc-if value="{{ pl.featured }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:-13px;left:28px;height:26px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;background:#F5B82E;color:#13203B;font:600 13px/1 Figtree,sans-serif">Más elegido</span>
+          </sc-if>
+          <h3 style="margin:0;font:600 clamp(20px,2vw,24px)/1.2 'Bricolage Grotesque',sans-serif">{{ pl.name }}</h3>
+          <p style="margin:6px 0 0;font:400 15px/1.5 Figtree,sans-serif;color:#556079;min-height:45px">{{ pl.phrase }}</p>
+          <div style="margin-top:24px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+            <span style="font:700 clamp(32px,3.4vw,40px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em">{{ pl.big }}</span>
+            <span style="font:400 15px/1 Figtree,sans-serif;color:#556079">/mes</span>
+          </div>
+          <div style="margin-top:8px;min-height:20px;font:400 14px/1.4 Figtree,sans-serif;color:#556079">{{ pl.small }}</div>
+          <a href="/registro" onClick="{{ pl.onClick }}" style="margin-top:24px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:12px;font:600 16px/1 Figtree,sans-serif;background:{{ pl.btnBg }};color:{{ pl.btnFg }};border:1.5px solid {{ pl.btnBorder }}" style-hover="opacity:.88">{{ pl.cta }}</a>
+          <ul style="list-style:none;margin:28px 0 0;padding:24px 0 0;border-top:1px solid #DCE1EA;display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ pl.features }}" as="f" hint-placeholder-count="7">
+              <li style="display:flex;gap:10px;align-items:flex-start;font:400 15px/1.45 Figtree,sans-serif;color:#13203B">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E9E6A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                <span>{{ f }}</span>
+              </li>
+            </sc-for>
+          </ul>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:24px 0 0;font:400 14px/1.5 Figtree,sans-serif;color:#556079">* Los créditos de bienvenida del plan Gratis se activan cuando tu tienda está verificada.</p>
+  </div>
+</section>
+
+<section id="preguntas" data-screen-label="09 Preguntas" aria-labelledby="faq-t" style="padding:clamp(72px,10vw,120px) 24px;background:#F3F5F9;scroll-margin-top:72px">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:48px 80px;align-items:start">
+    <div>
+      <h2 id="faq-t" style="margin:0;font:700 clamp(30px,3.6vw,40px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em">Preguntas frecuentes</h2>
+      <div style="margin-top:32px">
+        <p style="margin:0;font:600 clamp(20px,2vw,24px)/1.3 'Bricolage Grotesque',sans-serif">¿Te quedó alguna duda?</p>
+        <a href="{{ waHref }}" target="_blank" rel="noopener" onClick="{{ waFaq }}" style="margin-top:20px;height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#13203B;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="color:#13203B;opacity:.9">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+          Escribinos por WhatsApp
+        </a>
+      </div>
+    </div>
+    <div style="border-top:1px solid #DCE1EA">
+      <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="7">
+        <div style="border-bottom:1px solid #DCE1EA">
+          <h3 style="margin:0">
+            <button type="button" id="{{ q.btnId }}" aria-expanded="{{ q.open }}" aria-controls="{{ q.panelId }}" onClick="{{ q.toggle }}" style="width:100%;min-height:64px;padding:20px 0;display:flex;align-items:center;justify-content:space-between;gap:24px;background:transparent;border:0;cursor:pointer;text-align:left;color:#13203B;font:600 18px/1.35 Figtree,sans-serif">
+              <span>{{ q.q }}</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" style="flex:none;transition:transform .2s;transform:rotate({{ q.rot }})"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+          </h3>
+          <div id="{{ q.panelId }}" role="region" aria-labelledby="{{ q.btnId }}" style="display:grid;grid-template-rows:{{ q.rows }};transition:grid-template-rows .22s ease">
+            <div style="overflow:hidden">
+              <p style="margin:0;padding:0 40px 24px 0;font:400 16px/1.6 Figtree,sans-serif;color:#556079;max-width:60ch">{{ q.a }}</p>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="10 Cierre" aria-labelledby="cierre-t" style="position:relative;padding:clamp(88px,12vw,144px) 24px;overflow:hidden;text-align:center">
+  <div aria-hidden="true" style="position:absolute;left:50%;top:50%;width:420px;height:420px;transform:translate(-50%,-50%);opacity:.55;pointer-events:none">{{ nandutiMini }}</div>
+  <div style="position:relative;max-width:720px;margin:0 auto;display:flex;flex-direction:column;align-items:center">
+    <h2 id="cierre-t" style="margin:0;font:700 clamp(36px,4.6vw,56px)/1.05 'Bricolage Grotesque',sans-serif;letter-spacing:-0.025em;text-wrap:balance">Tu catálogo puede estar listo hoy.</h2>
+    <a href="/registro" onClick="{{ ctaClose }}" style="margin-top:40px;height:48px;padding:0 28px;display:inline-flex;align-items:center;justify-content:center;background:#1F4FD8;color:#FFFFFF;border-radius:12px;font:600 16px/1 Figtree,sans-serif;width:{{ btnW }}" style-hover="background:#183FB0;color:#FFFFFF">Crear mi catálogo gratis</a>
+    <span style="margin-top:12px;font:400 14px/1.4 Figtree,sans-serif;color:#556079">Gratis hasta 10 productos. Sin tarjeta.</span>
+  </div>
+</section>
+
+</main>
+
+<footer data-screen-label="11 Footer" style="background:#13203B;color:#FFFFFF;padding:72px 24px 40px">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:40px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:28px;height:28px;border-radius:8px;background:#1F4FD8;display:grid;place-items:center;color:#FFFFFF;font:700 16px/1 'Bricolage Grotesque',sans-serif">{{ initial }}</span>
+          <span style="font:700 20px/1 'Bricolage Grotesque',sans-serif">{{ name }}</span>
+        </div>
+        <p style="margin:16px 0 0;font:400 14px/1.6 Figtree,sans-serif;color:#C9D0DD;max-width:240px">Catálogos online para comercios de Paraguay.</p>
+      </div>
+      <nav aria-label="Producto" style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 14px/1 Figtree,sans-serif;margin-bottom:4px">Producto</span>
+        <a href="#como-funciona" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Cómo funciona</a>
+        <a href="#planes" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Planes</a>
+        <a href="#preguntas" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Preguntas</a>
+        <a href="/login" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Iniciar sesión</a>
+      </nav>
+      <nav aria-label="Legales" style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 14px/1 Figtree,sans-serif;margin-bottom:4px">Legales</span>
+        <a href="/terminos" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Términos y condiciones</a>
+        <a href="/privacidad" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">Privacidad</a>
+      </nav>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 14px/1 Figtree,sans-serif;margin-bottom:4px">Contacto</span>
+        <a href="{{ waHref }}" target="_blank" rel="noopener" style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif" style-hover="color:#FFFFFF">WhatsApp {{ waDisplay }}</a>
+        <span style="color:#C9D0DD;font:400 14px/1.4 Figtree,sans-serif">Instagram · Facebook (a confirmar)</span>
+      </div>
+    </div>
+    <div style="margin-top:56px;padding-top:24px;border-top:1px solid rgba(255,255,255,.14);font:400 14px/1.4 Figtree,sans-serif;color:#C9D0DD">© {{ year }} {{ name }}. Hecho en Paraguay.</div>
+  </div>
+</footer>
+
+<a href="{{ waHref }}" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp" onClick="{{ waFloat }}" style="position:fixed;right:{{ fabOff }};bottom:{{ fabOff }};z-index:60;width:56px;height:56px;border-radius:50%;background:#25D366;color:#13203B;display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(19,32,59,.35)" style-hover="color:#13203B;transform:scale(1.05)">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+</a>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;platformName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Plataforma&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Contenido&quot;},&quot;waNumber&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;595000000000&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Contenido&quot;},&quot;defaultPeriod&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mensual&quot;,&quot;anual&quot;],&quot;default&quot;:&quot;mensual&quot;,&quot;tsType&quot;:&quot;'mensual' | 'anual'&quot;,&quot;section&quot;:&quot;Planes&quot;},&quot;showPendingSlots&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Materiales&quot;}}">
+const IMG = p => 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_500,q_auto,f_auto/catalog/products/' + p;
+const P = {
+  poltrona: { name: 'Poltrona', price: 600000, img: IMG('sofa/poltrona-2-cover?v=1790795872712') },
+  espejoMimbre: { name: 'Espejo de mimbre', price: 145000, img: IMG('ESPEJO/espejo-de-mimbre-cover?v=1789072785500') },
+  espejo: { name: 'Espejo', price: 300000, img: IMG('ESPEJO/espejo-2-cover?v=1789071131939') },
+  espejoLuz: { name: 'Espejo con luz', price: 750000, img: IMG('ESPEJO/espejo-con-luz-cover?v=1789071591622') },
+  lampara: { name: 'Lámpara de mesa mariposa', price: 120000, img: IMG('decoracion/lampara-de-mesa-mariposa-cover?v=1789223315918') },
+  cesta: { name: 'Cesta mimbre', price: 120000, img: IMG('blanqueria/cesta-mimbre-cover?v=1788810943838') },
+  florero: { name: 'Florero cerámica', price: 60000, img: IMG('decoracion/florero-ceramica-cover?v=1789152047723') },
+  florero2: { name: 'Florero vidrio', price: 130000, img: IMG('decoracion/florero-vidrio-cover?v=1789151003721') },
+  florero3: { name: 'Florero', price: 160000, img: IMG('decoracion/florero-2-cover?v=1789151823955') },
+  alfombra: { name: 'Alfombra ovalada', price: 160000, img: IMG('blanqueria/alfombra-ovalada-cover?v=1788630183113') },
+  almohada: { name: 'Almohada deco', price: 60000, img: IMG('decoracion/almohada-deco-cover?v=1788879850159') },
+  cestas3: { name: 'Set de 3 cestas', price: 300000, img: IMG('blanqueria/set-de-3-cestas-cover?v=1788811202566') },
+  cuadro: { name: 'Cuadro deco', price: 150000, img: IMG('decoracion/cuadro-deco-cover?v=1789044807690') },
+  tulipanes: { name: 'Flor tulipanes rojo', price: 90000, img: IMG('decoracion/flor-tulipanes-rojo-cover?v=1790095912340') }
+};
+const gs = n => 'Gs. ' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const prod = k => ({ ...P[k], price: gs(P[k].price) });
+
+const PLANES = [
+  { id: 'gratis', name: 'Gratis', monthly: 0, annual: 0, phrase: 'Para empezar a mostrar tus productos', cta: 'Empezar gratis',
+    features: n => ['10 productos', '3 fotos por producto', '3 categorías', 'Fotos con IA: créditos de bienvenida*', 'Nombre y descripción con IA', 'Consultas por WhatsApp ilimitadas', 'Marca “Hecho con ' + n + '” visible'] },
+  { id: 'emprendedor', name: 'Emprendedor', monthly: 89000, annual: 890000, featured: true, phrase: 'Para vender todos los días', cta: 'Elegir Emprendedor',
+    features: n => ['100 productos', '6 fotos por producto', 'Categorías ilimitadas', '50 fotos con IA por mes', 'Nombre y descripción con IA', 'Consultas por WhatsApp ilimitadas', 'Marca “Hecho con ' + n + '” pequeña'] },
+  { id: 'negocio', name: 'Negocio', monthly: 189000, annual: 1890000, phrase: 'Para negocios con mucho catálogo', cta: 'Elegir Negocio',
+    features: n => ['Productos ilimitados', '10 fotos por producto', 'Categorías ilimitadas', '200 fotos con IA por mes', 'Nombre y descripción con IA', 'Consultas por WhatsApp ilimitadas', 'Podés quitar la marca “Hecho con ' + n + '”'] }
+];
+
+const CASOS = [
+  { id: 'ug-hogar', name: 'UG Hogar', rubro: 'Muebles y artículos para el hogar', url: 'https://www.ughogar.com/catalogo', logo: 'https://www.ughogar.com/img/brand/ug-logo.png',
+    photos: ['poltrona', 'espejoMimbre', 'lampara', 'cestas3', 'florero', 'cuadro'], quote: '', owner: '' },
+  { id: 'ipora-termos', name: 'Ipora Termos', rubro: 'Termos (rubro a confirmar)', url: '#', logo: '', photos: [], quote: '', owner: '' }
+];
+
+const FAQS = n => [
+  ['¿Qué es ' + n + '?', 'Una forma simple de tener tu catálogo online: cargás tus productos y compartís un link. Tus clientes ven todo y te consultan por WhatsApp.'],
+  ['¿Es gratis de verdad?', 'Sí. El plan Gratis no vence e incluye hasta 10 productos con 3 fotos cada uno. No pedimos tarjeta.'],
+  ['¿Mis clientes pueden comprar desde el catálogo?', 'Tus clientes eligen el producto y te escriben por WhatsApp con el producto ya indicado. La venta la cerrás vos, como hoy, pero sin repetir fotos y precios.'],
+  ['¿Necesito descargar una app?', 'No. Administrás tu catálogo desde el navegador del celular o la computadora.'],
+  ['¿Por qué tengo que verificar mi tienda?', 'Revisamos cada tienda nueva para que la plataforma tenga solo comercios reales. Tu catálogo funciona desde el primer momento; al verificarse suma la insignia y las funciones con IA.'],
+  ['¿Cobran comisión por venta?', 'No. Solo pagás el plan, si elegís uno pago.'],
+  ['¿Puedo cambiar o cancelar mi plan?', 'Sí, cuando quieras. Si bajás de plan no se borra nada: elegís qué productos seguir mostrando.']
+];
+
+function nanduti(size, rings) {
+  const h = React.createElement, c = 200, N = 32, out = [];
+  const pt = (r, a) => [c + r * Math.cos(a), c + r * Math.sin(a)];
+  const A = i => (i / N) * Math.PI * 2 - Math.PI / 2;
+  const R = [14, 42, 84, 124, 162, 192];
+  const stroke = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  for (let i = 0; i < N; i++) {
+    const [x1, y1] = pt(R[0], A(i)), [x2, y2] = pt(R[rings], A(i));
+    out.push(h('line', { key: 's' + i, x1, y1, x2, y2, stroke: '#DCE1EA', strokeWidth: 0.8 }));
+  }
+  R.slice(0, rings + 1).forEach((r, k) => out.push(h('circle', { key: 'r' + k, cx: c, cy: c, r, stroke: k === 0 ? '#E0457B' : '#DCE1EA', strokeWidth: k === 0 ? 1.4 : 0.8, fill: 'none' })));
+  const band = (r1, r2, color, w, kind, key) => {
+    let d = '';
+    for (let i = 0; i < N; i++) {
+      const a0 = A(i), a1 = A(i + 1), am = (a0 + a1) / 2;
+      const [x0, y0] = pt(r1, a0), [xm, ym] = pt(r2, am), [x1, y1] = pt(r1, a1);
+      if (kind === 'petal') { const [cx1, cy1] = pt(r2 * 1.05, a0 + (am - a0) * 0.3), [cx2, cy2] = pt(r2 * 1.05, a1 - (a1 - am) * 0.3); d += `M${x0},${y0}Q${cx1},${cy1} ${xm},${ym}Q${cx2},${cy2} ${x1},${y1}`; }
+      else if (kind === 'zig') d += (i === 0 ? `M${x0},${y0}` : '') + `L${xm},${ym}L${x1},${y1}`;
+      else { const [qx, qy] = pt(r2 * 1.02, am); d += `M${x0},${y0}Q${qx},${qy} ${x1},${y1}`; }
+    }
+    return h('path', { key, d, stroke: color, strokeWidth: w, ...stroke });
+  };
+  out.push(band(R[0], R[1], '#E0457B', 1.3, 'petal', 'b1'));
+  if (rings >= 2) out.push(band(R[1], R[2], '#F5B82E', 1.5, 'zig', 'b2'));
+  if (rings >= 3) out.push(band(R[2], R[3], '#2E9E6A', 1.3, 'petal', 'b3'));
+  if (rings >= 4) out.push(band(R[3], R[4], '#1F4FD8', 1.1, 'scallop', 'b4'));
+  if (rings >= 5) { out.push(band(R[4], R[5], '#E0457B', 1.2, 'zig', 'b5')); out.push(band(R[4], R[5] - 10, '#F5B82E', 1, 'scallop', 'b6')); }
+  for (let i = 0; i < N; i += 2) { const [x, y] = pt(R[Math.min(rings, 3)], A(i)); out.push(h('circle', { key: 'd' + i, cx: x, cy: y, r: 2.2, fill: '#F5B82E' })); }
+  return h('svg', { viewBox: '0 0 400 400', width: '100%', height: '100%', 'aria-hidden': true, focusable: 'false', style: { display: 'block', overflow: 'visible' } }, out);
+}
+
+class Component extends DCLogic {
+  state = { vw: typeof window !== 'undefined' ? window.innerWidth : 1280, scrolled: false, menuOpen: false, period: null, openFaq: 0, bubble: false, reduced: false };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ vw: window.innerWidth });
+    this.onScroll = () => { const s = window.scrollY > 8; if (s !== this.state.scrolled) this.setState({ scrolled: s }); };
+    window.addEventListener('resize', this.onResize);
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) this.setState({ reduced: true, bubble: true });
+    else this.t = setTimeout(() => this.setState({ bubble: true }), 900);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('scroll', this.onScroll);
+    clearTimeout(this.t);
+  }
+  track(event, data) {
+    try { (window.dataLayer = window.dataLayer || []).push({ event, ...data }); } catch (e) {}
+  }
+  cta(seccion) { return () => this.track('clic_crear_catalogo', { seccion }); }
+
+  renderVals() {
+    const name = this.props.platformName || 'Plataforma';
+    const wa = (this.props.waNumber || '595000000000').replace(/\D/g, '');
+    const period = this.state.period || this.props.defaultPeriod || 'mensual';
+    const annual = period === 'anual';
+    const { vw, reduced } = this.state;
+    const mobile = vw < 768, desktop = vw >= 1024;
+    const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    const domain = slug + '.com';
+    const setPeriod = p => { if (p !== period) { this.setState({ period: p }); this.track('cambio_periodo', { periodo: p }); } };
+    const heroMain = prod('poltrona');
+
+    const plans = PLANES.map(p => {
+      const big = annual ? gs(p.annual / 12) : gs(p.monthly);
+      return {
+        name: p.name, phrase: p.phrase, cta: p.cta, featured: !!p.featured, big,
+        small: annual && p.annual ? gs(p.annual) + ' por año' : (annual ? 'Siempre gratis' : ''),
+        border: p.featured ? '2px solid #1F4FD8' : '1px solid #DCE1EA',
+        btnBg: p.featured ? '#1F4FD8' : 'transparent', btnFg: p.featured ? '#FFFFFF' : '#13203B', btnBorder: p.featured ? '#1F4FD8' : '#13203B',
+        features: p.features(name),
+        onClick: () => this.track('clic_plan', { plan: p.id, periodo: period })
+      };
+    });
+
+    const showQ = this.props.showPendingSlots ?? true;
+    const cases = CASOS.map(c => ({
+      ...c, noLogo: !c.logo,
+      photos: c.photos.map(prod),
+      slots: showQ ? Array.from({ length: Math.max(0, 6 - c.photos.length) }, (_, i) => i) : [],
+      showQuote: !!c.quote, showQuotePlaceholder: !c.quote && showQ,
+      onClick: () => this.track('clic_caso', { tienda: c.id })
+    }));
+
+    const faqs = FAQS(name).map(([q, a], i) => {
+      const open = this.state.openFaq === i;
+      return { q, a, open, btnId: 'faq-b' + i, panelId: 'faq-p' + i, rows: open ? '1fr' : '0fr', rot: open ? '45deg' : '0deg',
+        toggle: () => this.setState({ openFaq: open ? -1 : i }) };
+    });
+
+    return {
+      name, initial: name.charAt(0).toUpperCase(), domain, slugLink: domain + '/ug-hogar', year: new Date().getFullYear(),
+      headerBorder: this.state.scrolled ? '#DCE1EA' : 'transparent',
+      isDesktopNav: vw >= 900, isMobileNav: vw < 900, menuOpen: this.state.menuOpen, showMobileMenu: vw < 900 && this.state.menuOpen,
+      menuIconPath: this.state.menuOpen ? 'M18 6 6 18M6 6l12 12' : 'M4 7h16M4 12h16M4 17h16',
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      navClick: () => this.setState({ menuOpen: false }),
+      headerBtnH: mobile ? '40px' : '48px', headerBtnPad: mobile ? '14px' : '22px', headerBtnFs: mobile ? '14px' : '16px',
+      heroBtnAlign: mobile ? 'stretch' : 'flex-start', btnW: mobile ? '100%' : 'auto',
+      ndSize: mobile ? 460 : 640,
+      nandutiHero: nanduti(640, 5), nandutiMini: nanduti(420, 3),
+      heroProducts: ['poltrona', 'espejoMimbre', 'lampara', 'cesta'].map(prod),
+      heroMain, heroMessage: 'Hola, me interesa la ' + heroMain.name + ' de ' + heroMain.price + '. ¿Está disponible?',
+      bLeft: mobile ? 'calc(50% - 170px)' : desktop ? 'calc(50% - 250px)' : 'calc(50% - 220px)',
+      bOp: this.state.bubble ? 1 : 0, bY: this.state.bubble ? '0px' : '16px',
+      bTr: reduced ? 'none' : 'opacity 400ms ease-out, transform 400ms ease-out',
+      chatPhotos: ['espejoMimbre', 'espejo', 'espejoLuz'].map(prod),
+      benMain: prod('florero2'), benThumbs: ['florero2', 'florero3', 'florero'].map((k, i) => ({ ...prod(k), border: i === 0 ? '2px solid #13203B' : '1px solid #DCE1EA' })),
+      chatProduct: prod('alfombra'), aiProduct: prod('lampara'),
+      revOrderA: 0, revOrderB: desktop ? -1 : 0,
+      cases, plans, faqs,
+      isMonthly: !annual, isAnnual: annual, tabMonthly: annual ? -1 : 0, tabAnnual: annual ? 0 : -1,
+      monthlyBg: annual ? 'transparent' : '#13203B', monthlyFg: annual ? '#13203B' : '#FFFFFF',
+      annualBg: annual ? '#13203B' : 'transparent', annualFg: annual ? '#FFFFFF' : '#13203B',
+      annualNoteOp: annual ? 1 : 0.55,
+      setMonthly: () => setPeriod('mensual'), setAnnual: () => setPeriod('anual'),
+      periodKey: e => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); const p = annual ? 'mensual' : 'anual'; setPeriod(p); const b = e.currentTarget.querySelectorAll('button')[p === 'anual' ? 1 : 0]; b && b.focus(); } },
+      waHref: 'https://wa.me/' + wa + '?text=' + encodeURIComponent('Hola, quiero saber más de ' + name),
+      waDisplay: '+' + wa.replace(/^(\d{3})(\d{3})(\d{3})(\d+)$/, '$1 $2 $3 $4'),
+      waFaq: () => this.track('clic_whatsapp', { origen: 'preguntas' }),
+      waFloat: () => this.track('clic_whatsapp', { origen: 'flotante' }),
+      fabOff: mobile ? '16px' : '24px',
+      ctaHeader: this.cta('encabezado'), ctaHero: this.cta('hero'), ctaSteps: this.cta('como_funciona'),
+      ctaBen1: this.cta('beneficio_link'), ctaBen2: this.cta('beneficio_whatsapp'), ctaBen3: this.cta('beneficio_ia'), ctaClose: this.cta('cierre')
+    };
+  }
+}
+</script>
+</body>
+</html>

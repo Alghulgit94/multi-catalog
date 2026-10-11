@@ -4,7 +4,7 @@
  */
 
 export const PLATFORM_NAME =
-  process.env.NEXT_PUBLIC_PLATFORM_NAME ?? "Multi Store Catalog"
+  process.env.NEXT_PUBLIC_PLATFORM_NAME ?? "Katalo"
 
 /** Public origin used for absolute links. Empty = derived from the request. */
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? ""

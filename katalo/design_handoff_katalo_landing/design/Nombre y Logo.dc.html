@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#EEF1F6;font-family:Figtree,system-ui,sans-serif;color:#13203B}a{color:#1F4FD8;text-decoration:none}a:hover{color:#183FB0}</style>
+</helmet>
+<section id="t1" style="padding:48px 48px 40px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+    <a href="#t1" style="font:600 11px ui-monospace,Menlo,monospace;padding:3px 7px;background:#13203B;color:#FFFFFF;border-radius:4px">1</a>
+    <span style="font:600 15px/1.2 Figtree,sans-serif">Nombre + logo · motivo ñandutí con wordmark</span>
+  </div>
+  <p style="margin:0 0 28px;font:400 14px/1.5 Figtree,sans-serif;color:#556079;max-width:640px">Tres nombres de marca cortos, en la línea de Tiendy o Shoperly pero propios. Cada uno tiene su variante del ñandutí. Se muestran en tamaño grande, sobre fondo oscuro, como ícono chico y en el encabezado.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+    <sc-for list="{{ opts }}" as="o" hint-placeholder-count="3">
+      <div id="{{ o.id }}" style="width:420px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 Figtree,sans-serif;color:#556079">
+          <a href="#{{ o.id }}" style="font:600 11px ui-monospace,Menlo,monospace;padding:3px 7px;background:#DCE1EA;color:#13203B;border-radius:5px">{{ o.id }}</a>{{ o.label }}
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #DCE1EA;border-radius:12px;overflow:hidden">
+          <div style="padding:56px 32px;display:flex;align-items:center;justify-content:center;gap:14px">
+            <span style="width:64px;height:64px;flex:none">{{ o.markLg }}</span>
+            <span style="font:700 48px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.03em;color:#13203B">{{ o.name }}</span>
+          </div>
+          <div style="background:#13203B;padding:32px;display:flex;align-items:center;justify-content:center;gap:12px">
+            <span style="width:40px;height:40px;flex:none">{{ o.markDark }}</span>
+            <span style="font:700 30px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.025em;color:#FFFFFF">{{ o.name }}</span>
+          </div>
+          <div style="padding:20px 24px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #DCE1EA">
+            <span style="width:56px;height:56px;border-radius:14px;background:{{ o.iconBg }};display:grid;place-items:center;flex:none"><span style="width:40px;height:40px">{{ o.markIcon }}</span></span>
+            <span style="width:32px;height:32px;flex:none">{{ o.markLg }}</span>
+            <span style="width:16px;height:16px;flex:none">{{ o.markLg }}</span>
+            <span style="font:400 12px/1.4 Figtree,sans-serif;color:#556079">Ícono de app, 32 px y favicon 16 px</span>
+          </div>
+          <div style="height:60px;padding:0 20px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:26px;height:26px">{{ o.markLg }}</span>
+              <span style="font:700 19px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.015em">{{ o.name }}</span>
+            </div>
+            <span style="height:36px;padding:0 14px;display:inline-flex;align-items:center;background:#1F4FD8;color:#FFFFFF;border-radius:10px;font:600 13px/1 Figtree,sans-serif">Crear mi catálogo</span>
+          </div>
+          <div style="padding:16px 20px 22px;border-top:1px solid #DCE1EA;background:#F3F5F9">
+            <div style="font:400 12px/1.4 Figtree,sans-serif;color:#556079">Link de tienda</div>
+            <div style="margin-top:4px;font:500 15px/1.4 Figtree,sans-serif;color:#1F4FD8">{{ o.domain }}/ug-hogar</div>
+            <p style="margin:12px 0 0;font:400 14px/1.5 Figtree,sans-serif;color:#13203B">{{ o.why }}</p>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <p style="margin:28px 0 0;font:400 13px/1.5 Figtree,sans-serif;color:#556079">Para seguir: “aplicá <a href="#1a">1a</a>” · “<a href="#1b">1b</a> pero con el ícono de <a href="#1c">1c</a>” · “otros 3 nombres más cortos”</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const C = { tinta: '#13203B', pri: '#1F4FD8', fu: '#E0457B', am: '#F5B82E', ve: '#2E9E6A', w: '#FFFFFF' };
+const h = (...a) => React.createElement(...a);
+const pt = (r, a) => [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+const ang = (i, n) => (i / n) * Math.PI * 2 - Math.PI / 2;
+function petals(n, r1, r2, color, w, key, fill) {
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const a = ang(i, n), s = Math.PI / n * 0.9;
+    const [x0, y0] = pt(r1, a - s * 0.35), [xt, yt] = pt(r2, a), [x1, y1] = pt(r1, a + s * 0.35);
+    const [c0x, c0y] = pt(r2 * 0.8, a - s), [c1x, c1y] = pt(r2 * 0.8, a + s);
+    d += `M${x0},${y0}Q${c0x},${c0y} ${xt},${yt}Q${c1x},${c1y} ${x1},${y1}`;
+  }
+  return h('path', { key, d, stroke: color, strokeWidth: w, fill: fill || 'none', strokeLinejoin: 'round', strokeLinecap: 'round' });
+}
+function spokes(n, r1, r2, color, w, key) {
+  return h('g', { key }, Array.from({ length: n }, (_, i) => { const [x1, y1] = pt(r1, ang(i, n)), [x2, y2] = pt(r2, ang(i, n)); return h('line', { key: i, x1, y1, x2, y2, stroke: color, strokeWidth: w, strokeLinecap: 'round' }); }));
+}
+const svg = kids => h('svg', { viewBox: '0 0 100 100', width: '100%', height: '100%', style: { display: 'block' }, 'aria-hidden': true }, kids);
+
+function markA(dark) {
+  const ink = dark ? C.w : C.pri;
+  return svg([
+    h('circle', { key: 'o', cx: 50, cy: 50, r: 44, fill: 'none', stroke: ink, strokeWidth: 6 }),
+    petals(8, 8, 38, ink, 5.5, 'p'),
+    h('circle', { key: 'c', cx: 50, cy: 50, r: 6, fill: C.fu })
+  ]);
+}
+function markB(dark) {
+  const ring = [C.fu, C.am, C.ve, dark ? C.w : C.pri];
+  const arcs = ring.map((col, k) => {
+    const a0 = ang(k, 4) + 0.12, a1 = ang(k + 1, 4) - 0.12;
+    const [x0, y0] = pt(42, a0), [x1, y1] = pt(42, a1);
+    return h('path', { key: 'a' + k, d: `M${x0},${y0}A42,42 0 0 1 ${x1},${y1}`, stroke: col, strokeWidth: 8, fill: 'none', strokeLinecap: 'round' });
+  });
+  return svg([...arcs, spokes(12, 10, 30, dark ? C.w : C.tinta, 4, 's'), h('circle', { key: 'c', cx: 50, cy: 50, r: 7, fill: dark ? C.w : C.tinta })]);
+}
+function markC(dark, onBlue) {
+  const bg = onBlue ? 'transparent' : (dark ? C.w : C.pri), fg = onBlue ? C.w : (dark ? C.pri : C.w);
+  return svg([
+    h('circle', { key: 'b', cx: 50, cy: 50, r: 48, fill: bg }),
+    petals(12, 6, 38, fg, 0, 'p', fg),
+    h('circle', { key: 'c', cx: 50, cy: 50, r: 7, fill: onBlue ? C.am : C.am })
+  ]);
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      opts: [
+        { id: '1a', name: 'Catalink', label: 'Catalink · catálogo + link', domain: 'catalink.com.py', markLg: markA(false), markDark: markA(true), markIcon: markA(true), iconBg: C.pri,
+          why: 'Dice exactamente qué es: tu catálogo en un link. Es la opción más clara para quien lo escucha por primera vez.' },
+        { id: '1b', name: 'Vitriny', label: 'Vitriny · de “vitrina”', domain: 'vitriny.com', markLg: markB(false), markDark: markB(true), markIcon: markB(true), iconBg: C.tinta,
+          why: 'Juega con la vidriera del concepto y tiene el sonido de “Tiendy”. Es el ícono con más color: los cuatro hilos del ñandutí.' },
+        { id: '1c', name: 'Katalo', label: 'Katalo · catálogo con k guaraní', domain: 'katalo.com.py', markLg: markC(false), markDark: markC(true), markIcon: markC(false, true), iconBg: C.pri,
+          why: 'Es el más corto. La k le da un aire paraguayo, porque el guaraní no usa c. El sello sólido se lee bien incluso a 16 px.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

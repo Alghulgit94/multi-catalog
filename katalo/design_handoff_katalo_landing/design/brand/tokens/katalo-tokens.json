@@ -1,0 +1,41 @@
+{
+  "color": {
+    "tinta": "#13203B",
+    "textoSecundario": "#556079",
+    "fondo": "#FFFFFF",
+    "fondoAlterno": "#F3F5F9",
+    "linea": "#DCE1EA",
+    "primario": "#1F4FD8",
+    "primarioHover": "#183FB0",
+    "nandutiFucsia": "#E0457B",
+    "nandutiAmarillo": "#F5B82E",
+    "nandutiVerde": "#2E9E6A",
+    "whatsapp": "#25D366",
+    "tinteAmarillo": "#FEF3D9",
+    "tinteVerde": "#E2F2EA",
+    "tinteFucsia": "#FCE6EE"
+  },
+  "font": {
+    "titulos": "Bricolage Grotesque",
+    "cuerpo": "Figtree"
+  },
+  "radius": {
+    "boton": 12,
+    "plan": 12,
+    "celular": 28,
+    "foto": 8,
+    "escenario": 24
+  },
+  "space": [
+    8,
+    16,
+    24,
+    32,
+    40,
+    48,
+    56,
+    64,
+    72,
+    120
+  ]
+}

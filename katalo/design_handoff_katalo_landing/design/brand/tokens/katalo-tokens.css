@@ -1,0 +1,46 @@
+/* Katalo — tokens de marca */
+:root {
+  /* Color */
+  --tinta: #13203B;
+  --texto-secundario: #556079;
+  --fondo: #FFFFFF;
+  --fondo-alterno: #F3F5F9;
+  --linea: #DCE1EA;
+  --primario: #1F4FD8;
+  --primario-hover: #183FB0;
+  --nanduti-fucsia: #E0457B;
+  --nanduti-amarillo: #F5B82E;
+  --nanduti-verde: #2E9E6A;
+  --whatsapp: #25D366;
+  /* Tintes suaves (solo fondos de escenario detrás de imágenes) */
+  --tinte-amarillo: #FEF3D9;
+  --tinte-verde: #E2F2EA;
+  --tinte-fucsia: #FCE6EE;
+  --texto-sobre-tinta: #C9D0DD;
+
+  /* Tipografía */
+  --fuente-titulos: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --fuente-cuerpo: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --t-hero: clamp(40px, 5.4vw, 64px);      /* 700 · 1.05 */
+  --t-seccion: clamp(30px, 3.6vw, 40px);   /* 700 · 1.1 */
+  --t-bloque: clamp(20px, 2vw, 24px);      /* 600 · 1.2 */
+  --t-cuerpo: clamp(16px, 1.5vw, 18px);    /* 400 · 1.6 */
+  --t-chico: 14px;
+  --t-boton: 16px;                          /* 600 */
+
+  /* Forma */
+  --radio-boton: 12px;
+  --radio-plan: 12px;
+  --radio-celular: 28px;
+  --radio-foto: 8px;
+  --radio-escenario: 24px;
+  --sombra-celular: 0 32px 64px -24px rgba(19,32,59,.35), 0 4px 12px rgba(19,32,59,.08);
+  --hilo: 4px;  /* línea de color sobre títulos y bloques */
+
+  /* Espacio (múltiplos de 8) */
+  --e-1: 8px; --e-2: 16px; --e-3: 24px; --e-4: 32px; --e-5: 40px; --e-6: 48px; --e-7: 56px; --e-8: 64px;
+  --seccion-y: 120px;          /* 72px en celular */
+  --ancho-max: 1200px;
+  --alto-boton: 48px;
+}
+@media (max-width: 767px) { :root { --seccion-y: 72px; } }

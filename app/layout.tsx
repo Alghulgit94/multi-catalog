@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { PLATFORM_NAME } from "@/lib/catalog-config"
+import "./globals.css"
 
 export const metadata: Metadata = {
   title: { default: PLATFORM_NAME, template: `%s | ${PLATFORM_NAME}` },
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es-PY" suppressHydrationWarning>
       <head>
         {/* Material Symbols for the merchant panel */}
         <link

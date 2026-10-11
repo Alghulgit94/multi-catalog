@@ -28,6 +28,7 @@ export interface StoreRow {
   currency: string
   locale: string
   plan_id: string | null
+  plan_intent: string | null
   verification_deadline: string | null
   verified_at: string | null
   review_message: string | null
