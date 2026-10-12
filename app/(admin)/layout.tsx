@@ -1,19 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, IBM_Plex_Mono } from "next/font/google"
 import { LayoutWrapper } from "@/components/layout-wrapper"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { PanelProvider } from "@/contexts/panel-context"
 import { requireStoreContext } from "@/lib/auth/session"
 import "../globals.css"
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
 
 export const metadata: Metadata = {
   title: "Panel del comercio",
@@ -29,13 +21,9 @@ export default async function PanelLayout({
   const { user, store } = await requireStoreContext()
 
   return (
-    <div className={`${inter.variable} ${ibmPlexMono.variable} font-sans antialiased`}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem
-        disableTransitionOnChange
-      >
+    <div className="katalo-app font-cuerpo text-tinta antialiased">
+      {/* El panel es solo claro: forcedTheme evita que los toasts sigan el tema del sistema. */}
+      <ThemeProvider attribute="class" forcedTheme="light" disableTransitionOnChange>
         <PanelProvider
           value={{
             storeName: store.name,

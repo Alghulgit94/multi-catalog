@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { PLATFORM_NAME } from "@/lib/catalog-config"
+import { bricolage, figtree } from "@/components/landing/fonts"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es-PY" suppressHydrationWarning>
+    <html lang="es-PY" className={`${bricolage.variable} ${figtree.variable}`} suppressHydrationWarning>
       <head>
         {/* Material Symbols for the merchant panel */}
         <link

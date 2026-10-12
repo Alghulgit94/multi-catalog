@@ -3,152 +3,84 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================
+ * Tema de la interfaz (panel, login, admin, diálogos y toasts):
+ * tokens de shadcn mapeados a la marca Katalo. El catálogo público
+ * de cada tienda NO usa estos tokens: tiene los suyos en
+ * app/[store]/(catalog)/catalog.css.
+ * Colores de marca: ver el bloque "Tokens de marca Katalo" más abajo.
+ * ============================================================ */
 :root {
-  /* OKLCH Color System - Light Mode */
-  --background: oklch(0.9975 0 0);       /* #FDFDFC cream white */
-  --foreground: oklch(0.16 0 0);         /* #252728 near-black */
-  --primary: oklch(0.49 0.06 220);       /* #537688 slate blue */
-  --primary-foreground: oklch(1 0 0);    /* White */
+  --background: #ffffff;
+  --foreground: #13203b;                 /* tinta */
+  --primary: #1f4fd8;                    /* primario: único color de acción */
+  --primary-foreground: #ffffff;
 
-  /* Secondary & Accent Colors */
-  --secondary: oklch(0.75 0.04 70);      /* #B8AA92 warm tan */
-  --secondary-foreground: oklch(0.16 0 0); /* #252728 near-black */
-  --accent: oklch(0.96 0.005 120);       /* light hover */
-  --accent-foreground: oklch(0.16 0 0);  /* #252728 */
+  --secondary: #f3f5f9;                  /* fondo-alterno */
+  --secondary-foreground: #13203b;
+  --accent: #eaf0fd;                     /* tinte del primario (hover, ítem activo) */
+  --accent-foreground: #13203b;
 
-  /* UI Component Colors */
-  --card: oklch(1 0 0);                  /* White */
-  --card-foreground: oklch(0.16 0 0);    /* #252728 */
-  --popover: oklch(0.9975 0 0);          /* #FDFDFC */
-  --popover-foreground: oklch(0.16 0 0); /* #252728 */
-  --muted: oklch(0.9700 0 0);            /* Ultra light gray */
-  --muted-foreground: oklch(0.4400 0 0); /* Medium gray */
+  --card: #ffffff;
+  --card-foreground: #13203b;
+  --popover: #ffffff;
+  --popover-foreground: #13203b;
+  --muted: #f3f5f9;
+  --muted-foreground: #556079;           /* texto-secundario */
 
-  /* Utility & Form Colors */
-  --border: oklch(0.84 0.01 120);        /* #D3D5D0 soft border */
-  --input: oklch(0.9400 0 0);            /* Soft gray */
-  --ring: oklch(0.49 0.06 220);          /* #537688 */
+  --border: #dce1ea;                     /* linea */
+  --input: #dce1ea;
+  --ring: #1f4fd8;
 
-  /* Status & Feedback Colors */
-  --destructive: oklch(0.6300 0.1900 23.0300); /* Professional red */
-  --destructive-foreground: oklch(1 0 0);       /* White */
+  /* Estados (el manual no los define: verde y amarillo del ñandutí + rojo propio) */
+  --destructive: #d93b3b;
+  --destructive-foreground: #ffffff;
+  --exito: #2e9e6a;
+  --exito-fondo: #e2f2ea;
+  --aviso: #f5b82e;
+  --aviso-fondo: #fef3d9;
+  --error: #d93b3b;
+  --error-fondo: #fdecec;
 
-  /* Chart & Visualization Colors */
-  --chart-1: oklch(0.49 0.06 220);
-  --chart-2: oklch(0.75 0.04 70);
-  --chart-3: oklch(0.7200 0 0);
-  --chart-4: oklch(0.9200 0 0);
-  --chart-5: oklch(0.5600 0 0);
+  --chart-1: #1f4fd8;
+  --chart-2: #2e9e6a;
+  --chart-3: #f5b82e;
+  --chart-4: #e0457b;
+  --chart-5: #556079;
 
-  /* Sidebar & Navigation Colors */
-  --sidebar: oklch(0.16 0 0);                /* #252728 dark-main */
-  --sidebar-foreground: oklch(1 0 0);        /* white */
-  --sidebar-primary: oklch(0.49 0.06 220);   /* #537688 active item */
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.22 0 0);         /* hover ~#323232 */
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.84 0.01 120);    /* mantener valor existente */
-  --sidebar-ring: oklch(0.49 0.06 220);
+  /* Sidebar del panel: tinta, texto claro */
+  --sidebar: #13203b;
+  --sidebar-foreground: #c9d0dd;          /* texto-sobre-tinta */
+  --sidebar-primary: #1f4fd8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #1f4fd8;
 
-  /* Typography */
-  --font-sans: Inter, sans-serif;
+  /* Tipografía: Figtree para la interfaz, Bricolage para títulos.
+     Las variables --font-figtree/--font-bricolage las define app/layout.tsx en <html>. */
+  --fuente-titulos: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --fuente-cuerpo: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--fuente-cuerpo);
   --font-serif: Georgia, serif;
-  --font-mono: Geist Mono, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Border Radius System */
-  --radius: 0.5rem;
+  /* Radio 12 = botón y bloques de la marca */
+  --radius: 0.75rem;
 
-  /* Shadow System */
-  --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.18;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-  --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
-  --shadow: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
-  --shadow-md: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 2px 4px -1px hsl(0 0% 0% / 0.18);
-  --shadow-lg: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 4px 6px -1px hsl(0 0% 0% / 0.18);
-  --shadow-xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 8px 10px -1px hsl(0 0% 0% / 0.18);
-  --shadow-2xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
+  /* Sombras mínimas: la jerarquía sale del contraste, no de las sombras */
+  --shadow-2xs: 0 1px 1px rgba(19, 32, 59, 0.04);
+  --shadow-xs: 0 1px 2px rgba(19, 32, 59, 0.06);
+  --shadow-sm: 0 1px 2px rgba(19, 32, 59, 0.06), 0 1px 3px rgba(19, 32, 59, 0.04);
+  --shadow: 0 1px 2px rgba(19, 32, 59, 0.06), 0 2px 6px rgba(19, 32, 59, 0.05);
+  --shadow-md: 0 2px 4px rgba(19, 32, 59, 0.06), 0 4px 12px rgba(19, 32, 59, 0.06);
+  --shadow-lg: 0 8px 24px -8px rgba(19, 32, 59, 0.18);
+  --shadow-xl: 0 16px 40px -12px rgba(19, 32, 59, 0.25);
+  --shadow-2xl: 0 32px 64px -24px rgba(19, 32, 59, 0.35);
 
-  /* Tracking & Spacing */
   --tracking-normal: 0em;
   --spacing: 0.25rem;
-}
-
-.dark {
-  /* OKLCH Color System - Dark Mode (Professional SaaS) */
-  --background: oklch(0 0 0);            /* Pure black */
-  --foreground: oklch(1 0 0);            /* Pure white */
-  --primary: oklch(1 0 0);               /* White */
-  --primary-foreground: oklch(0 0 0);    /* Black */
-
-  /* Dark Secondary & Accent Colors */
-  --secondary: oklch(0.2500 0 0);        /* Medium dark gray */
-  --secondary-foreground: oklch(1 0 0);  /* White */
-  --accent: oklch(0.3200 0 0);           /* Dark accent */
-  --accent-foreground: oklch(1 0 0);     /* White */
-
-  /* Dark UI Component Colors */
-  --card: oklch(0.1400 0 0);             /* Dark gray 14% */
-  --card-foreground: oklch(1 0 0);       /* White */
-  --popover: oklch(0.1800 0 0);          /* Dark gray 18% */
-  --popover-foreground: oklch(1 0 0);    /* White */
-  --muted: oklch(0.2300 0 0);            /* Gray 23% */
-  --muted-foreground: oklch(0.7200 0 0); /* Light gray */
-
-  /* Dark Utility & Form Colors */
-  --border: oklch(0.2600 0 0);           /* Gray 26% */
-  --input: oklch(0.3200 0 0);            /* Dark gray */
-  --ring: oklch(0.7200 0 0);             /* Light gray */
-
-  /* Dark Status & Feedback Colors */
-  --destructive: oklch(0.6900 0.2000 23.9100); /* Red */
-  --destructive-foreground: oklch(0 0 0);       /* Black */
-
-  /* Dark Chart & Visualization Colors */
-  --chart-1: oklch(0.8100 0.1700 75.3500);
-  --chart-2: oklch(0.5800 0.2100 260.8400);
-  --chart-3: oklch(0.5600 0 0);
-  --chart-4: oklch(0.4400 0 0);
-  --chart-5: oklch(0.9200 0 0);
-
-  /* Dark Sidebar & Navigation Colors */
-  --sidebar: oklch(0.1800 0 0);          /* Dark navigation */
-  --sidebar-foreground: oklch(1 0 0);    /* White */
-  --sidebar-primary: oklch(1 0 0);       /* White */
-  --sidebar-primary-foreground: oklch(0 0 0); /* Black */
-  --sidebar-accent: oklch(0.3200 0 0);   /* Dark accent */
-  --sidebar-accent-foreground: oklch(1 0 0); /* White */
-  --sidebar-border: oklch(0.3200 0 0);   /* Dark gray */
-  --sidebar-ring: oklch(0.7200 0 0);     /* Light gray */
-
-  /* Typography (same as light) */
-  --font-sans: Geist, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Geist Mono, monospace;
-
-  /* Border Radius System (same as light) */
-  --radius: 0.5rem;
-
-  /* Shadow System (same as light) */
-  --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.18;
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-  --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
-  --shadow: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
-  --shadow-md: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 2px 4px -1px hsl(0 0% 0% / 0.18);
-  --shadow-lg: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 4px 6px -1px hsl(0 0% 0% / 0.18);
-  --shadow-xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 8px 10px -1px hsl(0 0% 0% / 0.18);
-  --shadow-2xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
 }
 
 @theme inline {
@@ -168,6 +100,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-exito: var(--exito);
+  --color-exito-fondo: var(--exito-fondo);
+  --color-aviso: var(--aviso);
+  --color-aviso-fondo: var(--aviso-fondo);
+  --color-error: var(--error);
+  --color-error-fondo: var(--error-fondo);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -211,10 +149,9 @@
 }
 
 /* ============================================================
- * Tokens de marca Katalo — SOLO para la landing (`app/page.tsx`)
- * y las páginas legales (`/terminos`, `/privacidad`).
- * No reutilizar en el panel, login/registro ni en el catálogo
- * de tienda: esas rutas siguen con el tema genérico de arriba.
+ * Tokens de marca Katalo (landing, registro, login y panel).
+ * El catálogo público de cada tienda NO los usa: conserva la identidad
+ * del comercio.
  * Fuente: katalo/design_handoff_katalo_landing/tokens/*
  * ============================================================ */
 :root {
@@ -245,17 +182,6 @@
   --t-seccion: clamp(30px, 3.6vw, 40px);
   --t-bloque: clamp(20px, 2vw, 24px);
   --t-cuerpo: clamp(16px, 1.5vw, 18px);
-}
-
-/* --font-bricolage/--font-figtree solo existen en el div .katalo (los define la
-   clase .variable de next/font ahí mismo, ver components/landing/fonts.ts) — por
-   eso --fuente-titulos/--fuente-cuerpo se declaran también en .katalo, no en
-   :root: :root es ANCESTRO de .katalo y no puede resolver una variable que solo
-   existe en un descendiente. Nombre propio (no "--font-titulos"/"--font-cuerpo")
-   porque Tailwind ya usa esos nombres para su propio token de @theme. */
-.katalo {
-  --fuente-titulos: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --fuente-cuerpo: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @theme inline {
@@ -324,45 +250,11 @@ html:has(.katalo) {
 .katalo {
   -webkit-font-smoothing: antialiased;
 }
-.katalo :focus-visible {
+.katalo :focus-visible,
+.katalo-app :focus-visible {
   outline: 2px solid var(--primario);
   outline-offset: 3px;
   border-radius: 4px;
-}
-
-/* Custom Animations for Login */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes float-delayed {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* Glass Card Effect */
-.glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Reduced Motion Support */
