@@ -1,75 +1,54 @@
 "use client"
 
-import { useSidebar } from "@/contexts/sidebar-context"
-import { cn } from "@/lib/utils"
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type SaveStatus = "idle" | "saving" | "saved" | "error"
 
 interface BottomActionBarProps {
   isLast: boolean
   saveStatus: SaveStatus
+  dirty: boolean
   onSaveDraft: () => void
   onSaveAndNext: () => void
 }
 
-export function BottomActionBar({
-  isLast,
-  saveStatus,
-  onSaveDraft,
-  onSaveAndNext,
-}: BottomActionBarProps) {
-  const { isCollapsed } = useSidebar()
-
+/** Barra de acciones del gestor de fotos: queda pegada abajo mientras se scrollea. */
+export function BottomActionBar({ isLast, saveStatus, dirty, onSaveDraft, onSaveAndNext }: BottomActionBarProps) {
   return (
-    <div
-      className={cn(
-        "fixed bottom-0 right-0 z-10 border-t border-border bg-white/95 backdrop-blur-sm transition-[left]",
-        isCollapsed ? "left-16" : "left-64"
-      )}
-      style={{ transitionDuration: "var(--duration-base, 200ms)", transitionTimingFunction: "var(--ease-out, ease-out)" }}
-    >
-      <div className="flex items-center justify-between px-8 py-4">
-        {/* Status indicator */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {saveStatus === "saved" && (
-            <>
-              <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-              <span className="text-green-600">Cambios guardados</span>
-            </>
-          )}
+    <div className="sticky bottom-0 z-10 -mx-4 mt-8 border-t border-linea bg-white/95 px-4 py-3 backdrop-blur-sm sm:-mx-8 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm" aria-live="polite">
           {saveStatus === "saving" && (
             <>
-              <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
-              <span>Guardando...</span>
+              <Loader2 className="size-4 animate-spin text-texto-secundario" />
+              <span className="text-texto-secundario">Guardando…</span>
+            </>
+          )}
+          {saveStatus === "saved" && (
+            <>
+              <CheckCircle2 className="size-4 text-exito" strokeWidth={1.75} />
+              <span className="font-medium text-[#1e6e49]">Cambios guardados</span>
             </>
           )}
           {saveStatus === "error" && (
             <>
-              <span className="material-symbols-outlined text-red-600 text-[18px]">error</span>
-              <span className="text-red-600">Error al guardar</span>
+              <AlertCircle className="size-4 text-destructive" strokeWidth={1.75} />
+              <span className="font-medium text-destructive">No se pudo guardar</span>
             </>
           )}
           {saveStatus === "idle" && (
-            <span className="text-xs">Sin cambios pendientes</span>
+            <span className="text-texto-secundario">{dirty ? "Tenés cambios sin guardar" : "Sin cambios pendientes"}</span>
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSaveDraft}
-            disabled={saveStatus === "saving"}
-            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
-          >
-            Guardar borrador
-          </button>
-          <button
-            onClick={onSaveAndNext}
-            disabled={saveStatus === "saving"}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isLast ? "Guardar y finalizar" : "Guardar y siguiente producto"}
-          </button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onSaveDraft} disabled={saveStatus === "saving" || !dirty}>
+            Guardar
+          </Button>
+          <Button onClick={onSaveAndNext} disabled={saveStatus === "saving"}>
+            {isLast ? "Guardar y terminar" : "Guardar y seguir"}
+          </Button>
         </div>
       </div>
     </div>

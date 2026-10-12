@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, DragEvent, ChangeEvent, useRef } from "react"
-import { uploadProductImage } from "../../../productos/actions"
-import { cn } from "@/lib/utils"
+import { ImagePlus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { uploadProductImage } from "../../../productos/actions"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface CoverUploadProps {
   coverPublicId: string | null
@@ -14,14 +16,7 @@ interface CoverUploadProps {
   onRemove: () => void
 }
 
-export function CoverUpload({
-  coverPublicId,
-  coverPreview,
-  categorySlug,
-  productSlug,
-  onUpdate,
-  onRemove,
-}: CoverUploadProps) {
+export function CoverUpload({ coverPublicId, coverPreview, productSlug, onUpdate, onRemove }: CoverUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -30,109 +25,91 @@ export function CoverUpload({
     setIsUploading(true)
     try {
       const result = await uploadProductImage(file, productSlug, "cover")
-      if ("error" in result) {
+      if ("error" in result && result.error) {
         toast.error(result.error)
-      } else {
+      } else if (result.success) {
         onUpdate({ coverPublicId: result.public_id, coverPreview: result.secure_url })
-        toast.success("Portada actualizada")
       }
     } finally {
       setIsUploading(false)
     }
   }
 
-  const handleDragOver = (e: DragEvent) => { e.preventDefault(); setIsDragging(true) }
-  const handleDragLeave = (e: DragEvent) => { e.preventDefault(); setIsDragging(false) }
-  const handleDrop = (e: DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) uploadFile(file)
-  }
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) uploadFile(file)
-  }
-
   return (
-    <div className="mb-8">
-      {/* Section header */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="material-symbols-outlined text-primary text-[20px]">star</span>
-        <h3 className="text-sm font-semibold text-foreground">Imagen de Portada</h3>
-        <span className="text-xs text-muted-foreground ml-1">JPG, PNG, WebP — 16:7 recomendado</span>
+    <section className="mb-8">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
+        <h3 className="font-titulos text-[17px] font-semibold text-tinta">Portada</h3>
+        <span className="text-xs text-texto-secundario">La primera foto que se ve. JPG, PNG o WebP.</span>
       </div>
 
-      {/* Drop zone */}
       <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={(e: DragEvent) => {
+          e.preventDefault()
+          setIsDragging(true)
+        }}
+        onDragLeave={(e: DragEvent) => {
+          e.preventDefault()
+          setIsDragging(false)
+        }}
+        onDrop={(e: DragEvent) => {
+          e.preventDefault()
+          setIsDragging(false)
+          const file = e.dataTransfer.files?.[0]
+          if (file) uploadFile(file)
+        }}
         className={cn(
-          "relative w-full aspect-[16/7] rounded-2xl overflow-hidden transition-all",
+          "relative aspect-[4/3] w-full max-w-[520px] overflow-hidden rounded-[16px] transition-colors",
           !coverPublicId && "border-2 border-dashed",
-          isDragging
-            ? "border-primary/50 bg-primary/5"
-            : !coverPublicId
-            ? "border-border bg-muted/30 hover:border-primary/40 hover:bg-primary/5 cursor-pointer"
-            : ""
+          isDragging ? "border-primario bg-accent" : !coverPublicId && "border-linea bg-fondo-alterno/50"
         )}
-        onClick={!coverPublicId ? () => inputRef.current?.click() : undefined}
       >
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={handleChange}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0]
+            e.target.value = ""
+            if (file) uploadFile(file)
+          }}
         />
 
         {isUploading && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
-            <span className="material-symbols-outlined text-white text-[40px] animate-spin">sync</span>
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/80">
+            <Loader2 className="size-8 animate-spin text-primario" />
           </div>
         )}
 
         {coverPublicId ? (
           <>
-            <img
-              src={coverPreview}
-              alt="Portada"
-              className="w-full h-full object-cover"
-            />
-            {/* Hover overlay */}
-            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/0 hover:bg-black/40 transition-all group">
-              <button
-                onClick={() => inputRef.current?.click()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-foreground hover:bg-white/90"
-              >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverPreview} alt="Portada" className="h-full w-full border border-linea object-cover" />
+            <div className="absolute right-3 bottom-3 flex gap-2">
+              <Button size="sm" variant="outline" className="bg-white" onClick={() => inputRef.current?.click()}>
                 Cambiar
-              </button>
-              <button
-                onClick={onRemove}
-                className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Eliminar
-              </button>
+              </Button>
+              <Button size="sm" variant="outline" className="bg-white text-destructive hover:bg-error-fondo" onClick={onRemove}>
+                Quitar
+              </Button>
             </div>
           </>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <span className={cn(
-              "material-symbols-outlined text-[48px] transition-all",
-              isDragging ? "text-primary scale-110" : "text-muted-foreground/50"
-            )}>
-              add_photo_alternate
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="flex h-full w-full flex-col items-center justify-center gap-3 hover:bg-fondo-alterno"
+          >
+            <ImagePlus className={cn("size-10", isDragging ? "text-primario" : "text-texto-secundario")} strokeWidth={1.5} />
+            <span>
+              <span className="block text-sm font-semibold text-tinta">
+                {isDragging ? "Soltá la foto acá" : "Arrastrá una foto acá"}
+              </span>
+              <span className="mt-1 block text-xs text-texto-secundario">O hacé clic para elegirla</span>
             </span>
-            <div className="text-center">
-              <p className="text-sm font-medium text-foreground">
-                {isDragging ? "Suelta la imagen aquí" : "Arrastra una imagen aquí"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">O haz clic para seleccionar</p>
-            </div>
-          </div>
+          </button>
         )}
       </div>
-    </div>
+    </section>
   )
 }

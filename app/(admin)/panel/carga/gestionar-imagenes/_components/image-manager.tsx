@@ -11,6 +11,9 @@ import { ProductListPanel } from "./product-list-panel"
 import { CoverUpload } from "./cover-upload"
 import { GalleryUpload } from "./gallery-upload"
 import { BottomActionBar } from "./bottom-action-bar"
+import { EmptyState } from "@/components/panel/empty-state"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface GalleryItem {
   publicId: string
@@ -64,7 +67,7 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
       const galleryItems: GalleryItem[] = (p.gallery_images ?? []).map((pid, i) => ({
         publicId: pid,
         preview: buildImageUrl(pid, 400, version),
-        label: `Imagen ${String(i + 1).padStart(2, "0")}`,
+        label: `Foto ${i + 1}`,
       }))
       initial[p.id] = {
         coverPublicId: p.cover_image ?? null,
@@ -115,7 +118,7 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
   async function handleSaveDraft() {
     if (!selectedId) return
     const ok = await saveProduct(selectedId)
-    if (ok) toast.success("Borrador guardado")
+    if (ok) toast.success("Fotos guardadas")
   }
 
   async function handleSaveAndNext() {
@@ -128,9 +131,9 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
       setSelectedId(displayProducts[currentIndex + 1].id)
       setSaveStatus("idle")
     } else {
-      // Last product — redirect to /carga
-      toast.success("¡Gestión de imágenes completada!")
-      router.push("/panel/carga")
+      // Último producto: vuelve al listado.
+      toast.success("Listo, guardaste las fotos de todos los productos")
+      router.push("/panel/productos")
     }
   }
 
@@ -144,75 +147,76 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
     categories.find((c) => c.id === selectedProduct?.category_id)?.slug ??
     "sin-categoria"
 
-  return (
-    <div className="flex flex-1 overflow-hidden h-full">
-      {/* Left panel */}
-      <ProductListPanel
-        products={displayProducts}
-        selectedId={selectedId}
-        localEdits={localEdits}
-        onSelect={(id) => {
-          setSelectedId(id)
-          setSaveStatus("idle")
-        }}
+  if (displayProducts.length === 0 && products.length === 0) {
+    return (
+      <EmptyState
+        className="mt-6"
+        illustration="fotos"
+        title="Primero cargá productos"
+        description="Cuando tengas productos, acá les vas a poder subir la portada y la galería."
+        actions={
+          <Button asChild>
+            <Link href="/panel/productos/nuevo">Agregar producto</Link>
+          </Button>
+        }
       />
+    )
+  }
 
-      {/* Right editor */}
-      <section className="flex-1 overflow-y-auto p-8 pb-24">
-        {selectedProduct && selectedEdit ? (
-          <>
-            {/* Editor header */}
-            <div className="mb-6">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
-                {categorySlug}
-              </p>
-              <h1 className="text-xl font-bold text-foreground">{selectedProduct.name}</h1>
-              <p className="text-sm text-muted-foreground">{selectedProduct.slug}</p>
-            </div>
+  return (
+    <div className="mt-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <ProductListPanel
+          products={displayProducts}
+          selectedId={selectedId}
+          localEdits={localEdits}
+          onSelect={(id) => {
+            setSelectedId(id)
+            setSaveStatus("idle")
+          }}
+        />
 
-            {/* Cover upload */}
-            <CoverUpload
-              coverPublicId={selectedEdit.coverPublicId}
-              coverPreview={selectedEdit.coverPreview}
-              categorySlug={categorySlug}
-              productSlug={selectedProduct.slug}
-              onUpdate={({ coverPublicId, coverPreview }) =>
-                updateEdit(selectedProduct.id, { coverPublicId, coverPreview })
-              }
-              onRemove={() =>
-                updateEdit(selectedProduct.id, {
-                  coverPublicId: null,
-                  coverPreview: buildImageUrl(null),
-                })
-              }
-            />
+        <section className="min-w-0">
+          {selectedProduct && selectedEdit ? (
+            <>
+              <div className="mb-6">
+                <p className="text-sm text-texto-secundario">
+                  {selectedProduct.categories?.name ?? categories.find((c) => c.id === selectedProduct.category_id)?.name}
+                </p>
+                <h2 className="font-titulos text-2xl font-bold tracking-[-0.01em] text-tinta">{selectedProduct.name}</h2>
+              </div>
 
-            {/* Gallery upload */}
-            <GalleryUpload
-              galleryItems={selectedEdit.galleryItems}
-              categorySlug={categorySlug}
-              productSlug={selectedProduct.slug}
-              onUpdate={(galleryItems) =>
-                updateEdit(selectedProduct.id, { galleryItems })
-              }
-            />
-          </>
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <span className="material-symbols-outlined text-[64px] text-muted-foreground/30">
-                image_search
-              </span>
-              <p className="mt-4 text-sm">Selecciona un producto para gestionar sus imágenes</p>
-            </div>
-          </div>
-        )}
-      </section>
+              <CoverUpload
+                coverPublicId={selectedEdit.coverPublicId}
+                coverPreview={selectedEdit.coverPreview}
+                categorySlug={categorySlug}
+                productSlug={selectedProduct.slug}
+                onUpdate={({ coverPublicId, coverPreview }) => updateEdit(selectedProduct.id, { coverPublicId, coverPreview })}
+                onRemove={() =>
+                  updateEdit(selectedProduct.id, {
+                    coverPublicId: null,
+                    coverPreview: buildImageUrl(null),
+                  })
+                }
+              />
 
-      {/* Fixed bottom bar */}
+              <GalleryUpload
+                galleryItems={selectedEdit.galleryItems}
+                categorySlug={categorySlug}
+                productSlug={selectedProduct.slug}
+                onUpdate={(galleryItems) => updateEdit(selectedProduct.id, { galleryItems })}
+              />
+            </>
+          ) : (
+            <EmptyState illustration="fotos" title="Elegí un producto" description="Seleccioná un producto de la lista para cargarle fotos." />
+          )}
+        </section>
+      </div>
+
       <BottomActionBar
         isLast={isLast}
         saveStatus={saveStatus}
+        dirty={Boolean(selectedEdit?.isDirty)}
         onSaveDraft={handleSaveDraft}
         onSaveAndNext={handleSaveAndNext}
       />

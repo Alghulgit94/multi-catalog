@@ -4,6 +4,8 @@ import { toAssetVersion } from "@/lib/types-catalog"
 import { buildImageUrl } from "@/lib/media-urls"
 import { cn } from "@/lib/utils"
 import type { Product } from "@/lib/types-catalog"
+import { Thumb } from "@/components/panel/data-table"
+import { StatusBadge } from "@/components/panel/status-badge"
 
 interface ProductImageEdit {
   coverPublicId: string | null
@@ -25,70 +27,53 @@ interface ProductListPanelProps {
   onSelect: (id: string) => void
 }
 
-export function ProductListPanel({
-  products,
-  selectedId,
-  localEdits,
-  onSelect,
-}: ProductListPanelProps) {
+export function ProductListPanel({ products, selectedId, localEdits, onSelect }: ProductListPanelProps) {
+  const conFoto = products.filter((p) => localEdits[p.id]?.coverPublicId).length
+
   return (
-    <aside className="w-[400px] shrink-0 border-r border-border bg-white flex flex-col overflow-hidden">
-      <div className="px-5 py-4 border-b border-border shrink-0">
-        <h2 className="text-sm font-semibold text-foreground">Productos</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {products.length} producto{products.length !== 1 ? "s" : ""} para gestionar
+    <aside className="flex max-h-[360px] flex-col overflow-hidden rounded-[16px] border border-linea lg:sticky lg:top-6 lg:max-h-[calc(100dvh-180px)]">
+      <div className="shrink-0 border-b border-linea bg-fondo-alterno px-4 py-3">
+        <h2 className="text-sm font-semibold text-tinta">Productos</h2>
+        <p className="text-xs text-texto-secundario">
+          {conFoto} de {products.length} con portada
         </p>
       </div>
-      <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+      <ul className="flex-1 divide-y divide-linea overflow-y-auto">
         {products.map((product) => {
           const edit = localEdits[product.id]
           const isComplete = Boolean(edit?.coverPublicId)
           const isSelected = product.id === selectedId
-          const thumbUrl = edit?.coverPublicId
-            ? buildImageUrl(edit.coverPublicId, 128, toAssetVersion(product.updated_at))
-            : buildImageUrl(null, 128)
 
           return (
-            <button
-              key={product.id}
-              onClick={() => onSelect(product.id)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-l-4",
-                isSelected
-                  ? "border-l-primary bg-primary/5"
-                  : "border-l-transparent hover:bg-slate-50"
-              )}
-            >
-              {/* Thumbnail */}
-              <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-muted">
-                <img
-                  src={thumbUrl}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{product.slug}</p>
-              </div>
-
-              {/* Status badge */}
-              <span
+            <li key={product.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(product.id)}
+                aria-current={isSelected ? "true" : undefined}
                 className={cn(
-                  "shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
-                  isComplete
-                    ? "bg-green-100 text-green-700"
-                    : "bg-amber-100 text-amber-700"
+                  "flex w-full items-center gap-3 border-l-4 px-3 py-2.5 text-left transition-colors",
+                  isSelected ? "border-l-primario bg-accent" : "border-l-transparent hover:bg-fondo-alterno"
                 )}
               >
-                {isComplete ? "Completado" : "Pendiente"}
-              </span>
-            </button>
+                <Thumb
+                  src={edit?.coverPublicId ? buildImageUrl(edit.coverPublicId, 128, toAssetVersion(product.updated_at)) : null}
+                  alt={product.name}
+                  size={44}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-tinta">{product.name}</span>
+                  <span className="block truncate text-xs text-texto-secundario">
+                    {edit?.isDirty ? "Cambios sin guardar" : product.slug}
+                  </span>
+                </span>
+                <StatusBadge tone={isComplete ? "exito" : "aviso"} className="shrink-0">
+                  {isComplete ? "Lista" : "Falta foto"}
+                </StatusBadge>
+              </button>
+            </li>
           )
         })}
-      </div>
+      </ul>
     </aside>
   )
 }
