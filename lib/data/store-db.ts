@@ -1,68 +1,52 @@
-import { restFetch, restJson } from "./rest"
+import { and, count, eq, type SQL } from "drizzle-orm"
+import { getDb, schema, type Db } from "../db"
+
+type StoreTable =
+  | typeof schema.categories
+  | typeof schema.subcategories
+  | typeof schema.products
+  | typeof schema.product_images
 
 /**
  * Capa única de acceso a datos del panel. Toda consulta sobre tablas de una
- * tienda pasa por acá, y agrega `store_id` por su cuenta: ninguna pantalla ni
- * server action filtra a mano. `store_id` del body se pisa siempre con el de la
- * tienda de la sesión, así que un formulario no puede escribir en otra tienda.
+ * tienda pasa por acá: `where()` agrega `store_id` por su cuenta, `withStore()`
+ * lo fija en los inserts y `safe()` lo quita de los updates, así que un
+ * formulario no puede leer ni escribir en otra tienda.
  */
 export interface StoreDb {
   readonly storeId: string
-  /** `query` son filtros PostgREST sin `store_id` (ej. `id=eq.123&select=*`). */
-  select<T>(table: string, query?: string): Promise<T[]>
-  count(table: string, query?: string): Promise<number>
-  insert(table: string, body: Record<string, unknown>): Promise<Response>
-  /** Inserta varias filas; cada una lleva el store_id de la tienda. */
-  insertMany(table: string, rows: Record<string, unknown>[]): Promise<Response>
-  update(table: string, filter: string, body: Record<string, unknown>): Promise<Response>
-  remove(table: string, filter: string): Promise<Response>
+  readonly db: Db
+  /** `store_id = <tienda>` AND las condiciones extra. */
+  where(table: StoreTable, ...conds: (SQL | undefined)[]): SQL
+  /** Fila para insertar, con el store_id de la tienda (pisa el que venga). */
+  withStore<T extends object>(row: T): T & { store_id: string }
+  /** Cambios para un update, sin store_id: una fila no se puede mover de tienda. */
+  safe<T extends object>(row: T): Omit<T, "store_id">
+  count(table: StoreTable, ...conds: (SQL | undefined)[]): Promise<number>
 }
 
 export function storeDb(storeId: string): StoreDb {
-  const scope = `store_id=eq.${encodeURIComponent(storeId)}`
-  const withScope = (query?: string) => (query ? `${query}&${scope}` : scope)
+  const db = getDb()
+  const where = (table: StoreTable, ...conds: (SQL | undefined)[]) =>
+    and(eq(table.store_id, storeId), ...conds) as SQL
 
   return {
     storeId,
+    db,
+    where,
 
-    async select<T>(table: string, query?: string) {
-      return (await restJson<T[]>(`${table}?${withScope(query)}`)) ?? []
+    withStore(row) {
+      return { ...row, store_id: storeId }
     },
 
-    async count(table: string, query?: string) {
-      const res = await restFetch(`${table}?select=id&${withScope(query)}`, {
-        headers: { Prefer: "count=exact", Range: "0-0" },
-      })
-      return parseInt(res.headers.get("content-range")?.split("/")[1] || "0")
+    safe(row) {
+      const { store_id: _ignored, ...rest } = row as Record<string, unknown>
+      return rest as never
     },
 
-    insert(table, body) {
-      return restFetch(table, {
-        method: "POST",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify({ ...body, store_id: storeId }),
-      })
-    },
-
-    insertMany(table, rows) {
-      return restFetch(table, {
-        method: "POST",
-        headers: { Prefer: "return=minimal" },
-        body: JSON.stringify(rows.map((r) => ({ ...r, store_id: storeId }))),
-      })
-    },
-
-    update(table, filter, body) {
-      const { store_id: _ignored, ...safe } = body
-      return restFetch(`${table}?${withScope(filter)}`, {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: JSON.stringify(safe),
-      })
-    },
-
-    remove(table, filter) {
-      return restFetch(`${table}?${withScope(filter)}`, { method: "DELETE" })
+    async count(table, ...conds) {
+      const [row] = await db.select({ n: count() }).from(table).where(where(table, ...conds))
+      return row?.n ?? 0
     },
   }
 }

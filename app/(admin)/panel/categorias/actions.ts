@@ -2,14 +2,12 @@
 
 import { revalidatePath } from "next/cache"
 import { requireStoreContext } from "@/lib/auth/session"
-import {
-  belongsToStore,
-  destroyCloudinaryAssets,
-  type CloudinaryUploadOutcome,
-  storeAssetFolder,
-  uploadImageToCloudinary,
-} from "@/lib/cloudinary-upload"
+import { eq } from "drizzle-orm"
+import { schema } from "@/lib/db"
+import { belongsToStore, destroyAssets, type UploadOutcome, storeAssetFolder, uploadImage } from "@/lib/media"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
+
+const { categories } = schema
 
 function readCategoryForm(formData: FormData, storeId: string) {
   const imagePath = (formData.get("image_path") as string) || null
@@ -30,17 +28,17 @@ export async function createCategory(formData: FormData) {
   const body = readCategoryForm(formData, store.id)
   body.slug = await ensureUniqueSlug(db, "categories", body.slug, body.name)
 
-  const res = await db.insert("categories", body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  let id: string | undefined
+  try {
+    const [row] = await db.db.insert(categories).values(db.withStore(body)).returning({ id: categories.id })
+    id = row?.id
+  } catch (err) {
     return { error: describeWriteError(err, "una categoría", body.slug, "Error al crear categoría") }
   }
 
-  const rows = await res.json()
   revalidatePath("/panel/categorias")
   revalidatePath("/panel/dashboard")
-  return { success: true, id: rows[0]?.id }
+  return { success: true, id }
 }
 
 export async function updateCategory(id: string, formData: FormData) {
@@ -48,10 +46,9 @@ export async function updateCategory(id: string, formData: FormData) {
   const body = readCategoryForm(formData, store.id)
   body.slug = await ensureUniqueSlug(db, "categories", body.slug, body.name, id)
 
-  const res = await db.update("categories", `id=eq.${id}`, body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  try {
+    await db.db.update(categories).set(db.safe(body)).where(db.where(categories, eq(categories.id, id)))
+  } catch (err) {
     return { error: describeWriteError(err, "una categoría", body.slug, "Error al actualizar categoría") }
   }
 
@@ -64,25 +61,30 @@ export async function updateCategory(id: string, formData: FormData) {
 export async function deleteCategory(id: string) {
   const { db, store } = await requireStoreContext()
 
-  // Leer la imagen ANTES del DELETE, si no queda huérfana en Cloudinary.
-  const [row] = await db.select<{ image_path: string | null }>("categories", `id=eq.${id}&select=image_path`)
+  // Leer la imagen ANTES del DELETE, si no queda huérfana en R2.
+  const [row] = await db.db
+    .select({ image_path: categories.image_path })
+    .from(categories)
+    .where(db.where(categories, eq(categories.id, id)))
   const imagePath = row?.image_path ?? null
 
-  const res = await db.remove("categories", `id=eq.${id}`)
-
-  if (!res.ok) {
+  try {
+    await db.db.delete(categories).where(db.where(categories, eq(categories.id, id)))
+  } catch (err) {
+    // FK RESTRICT: la categoría todavía tiene productos.
+    console.error("[categorias] no se pudo eliminar", err)
     return { error: "Error al eliminar categoría" }
   }
 
-  // Best-effort: la categoría ya no existe, no reportar un fallo de Cloudinary.
-  if (imagePath) await destroyCloudinaryAssets(store.id, [imagePath])
+  // Best-effort: la categoría ya no existe, no reportar un fallo de R2.
+  if (imagePath) await destroyAssets(store.id, [imagePath])
 
   revalidatePath("/panel/categorias")
   revalidatePath("/panel/dashboard")
   return { success: true }
 }
 
-export async function uploadCategoryImage(formData: FormData): Promise<CloudinaryUploadOutcome> {
+export async function uploadCategoryImage(formData: FormData): Promise<UploadOutcome> {
   const { store } = await requireStoreContext()
   const file = formData.get("file") as File
   const slug = formData.get("slug") as string
@@ -91,5 +93,5 @@ export async function uploadCategoryImage(formData: FormData): Promise<Cloudinar
     return { error: "Archivo y slug son requeridos" }
   }
 
-  return uploadImageToCloudinary(file, storeAssetFolder(store.id, "categories"), slug)
+  return uploadImage(file, storeAssetFolder(store.id, "categories"), slug)
 }

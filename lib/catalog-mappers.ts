@@ -1,5 +1,5 @@
 /**
- * Maps raw Supabase rows → UI-shaped catalog types.
+ * Maps raw D1 rows → UI-shaped catalog types.
  * Pure functions — no side effects.
  */
 
@@ -10,7 +10,7 @@ import {
   getProductOgImageUrl,
   getProductGalleryUrls,
   getCategoryImageUrl,
-} from "./cloudinary-catalog"
+} from "./media-urls"
 
 export function mapProduct(row: Product): CatalogProduct {
   const categoryRow = row.categories ?? null

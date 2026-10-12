@@ -5,8 +5,8 @@ import { redirect } from "next/navigation"
 import { APIError } from "better-auth/api"
 import { auth } from "@/lib/auth/server"
 import { getSession, getStoreContext } from "@/lib/auth/session"
-import { getImageUrl } from "@/lib/cloudinary-catalog"
-import { destroyDraftAsset, uploadImageToCloudinary } from "@/lib/cloudinary-upload"
+import { getImageUrl } from "@/lib/media-urls"
+import { destroyDraftAsset, uploadImage } from "@/lib/media"
 import { getDraft, saveDraft, setDraftLogo } from "@/lib/onboarding/draft"
 import { crearTiendaDesdeBorrador, slugDisponible, validarBorrador } from "@/lib/onboarding/finalize"
 import { cuentaSchema, planSchema, tiendaSchema, whatsappSchema } from "@/lib/onboarding/schemas"
@@ -76,7 +76,7 @@ export async function subirLogo(formData: FormData): Promise<Ok<{ url: string }>
   const draft = await getDraft()
   if (!draft) return { ok: false, error: "Tu sesión de registro venció. Volvé al primer paso." }
 
-  const res = await uploadImageToCloudinary(file, `drafts/${draft.id}`, "logo")
+  const res = await uploadImage(file, `drafts/${draft.id}`, "logo")
   if (!res.success) return { ok: false, error: "No pudimos subir el logo. Probá con otra imagen." }
 
   await setDraftLogo(draft.id, res.public_id)
@@ -96,12 +96,7 @@ export async function urlLogoDeBorrador(publicId: string | null): Promise<string
 }
 
 function urlLogo(publicId: string, fresh: boolean) {
-  return getImageUrl(publicId, {
-    width: 400,
-    quality: "auto",
-    format: "auto",
-    version: fresh ? String(Date.now()) : null,
-  })
+  return getImageUrl(publicId, { width: 400, version: fresh ? String(Date.now()) : null })
 }
 
 /**

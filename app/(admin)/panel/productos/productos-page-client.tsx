@@ -5,7 +5,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Product, Category } from "@/lib/types-catalog"
-import { buildCloudinaryUrl, toAssetVersion } from "@/lib/types-catalog"
+import { toAssetVersion } from "@/lib/types-catalog"
+import { buildImageUrl } from "@/lib/media-urls"
 import { deleteProduct, toggleProductActive } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -166,7 +167,7 @@ export function ProductosPageClient({ products, categories, extraActions }: Prop
                     <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                       {product.cover_image ? (
                         <img
-                          src={buildCloudinaryUrl(product.cover_image, 80, toAssetVersion(product.updated_at))}
+                          src={buildImageUrl(product.cover_image, 80, toAssetVersion(product.updated_at))}
                           alt={product.name}
                           className="h-full w-full object-cover"
                         />

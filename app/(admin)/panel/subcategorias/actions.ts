@@ -1,8 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { eq } from "drizzle-orm"
 import { requireStoreContext } from "@/lib/auth/session"
+import { schema } from "@/lib/db"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
+
+const { subcategories } = schema
 
 type SubcategoryResult = {
   success?: boolean
@@ -23,16 +27,18 @@ export async function createSubcategory(formData: FormData): Promise<Subcategory
 
   body.slug = await ensureUniqueSlug(db, "subcategories", body.slug, body.name)
 
-  const res = await db.insert("subcategories", body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  let created: { id: string; slug: string } | undefined
+  try {
+    ;[created] = await db.db
+      .insert(subcategories)
+      .values(db.withStore(body))
+      .returning({ id: subcategories.id, slug: subcategories.slug })
+  } catch (err) {
     return { error: describeWriteError(err, "una subcategoría", body.slug, "Error al crear subcategoría") }
   }
 
-  const rows = await res.json()
   revalidatePath("/panel/subcategorias")
-  return { success: true, id: rows[0]?.id, slug: rows[0]?.slug ?? body.slug }
+  return { success: true, id: created?.id, slug: created?.slug ?? body.slug }
 }
 
 export async function updateSubcategory(id: string, formData: FormData): Promise<SubcategoryResult> {
@@ -48,10 +54,9 @@ export async function updateSubcategory(id: string, formData: FormData): Promise
   // Excluir la propia fila: un slug sin cambios debe pasar intacto.
   body.slug = await ensureUniqueSlug(db, "subcategories", body.slug, body.name, id)
 
-  const res = await db.update("subcategories", `id=eq.${id}`, body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  try {
+    await db.db.update(subcategories).set(db.safe(body)).where(db.where(subcategories, eq(subcategories.id, id)))
+  } catch (err) {
     return { error: describeWriteError(err, "una subcategoría", body.slug, "Error al actualizar subcategoría") }
   }
 
@@ -62,9 +67,10 @@ export async function updateSubcategory(id: string, formData: FormData): Promise
 
 export async function deleteSubcategory(id: string) {
   const { db } = await requireStoreContext()
-  const res = await db.remove("subcategories", `id=eq.${id}`)
-
-  if (!res.ok) {
+  try {
+    await db.db.delete(subcategories).where(db.where(subcategories, eq(subcategories.id, id)))
+  } catch (err) {
+    console.error("[subcategorias] no se pudo eliminar", err)
     return { error: "Error al eliminar subcategoría" }
   }
 

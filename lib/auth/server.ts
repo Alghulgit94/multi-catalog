@@ -1,22 +1,25 @@
 import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
-import { Pool } from "pg"
+import { getDb, schema } from "../db"
 import { sendEmail } from "../email"
 
 /**
- * Better Auth: usuarios y sesiones en tablas propias de la misma BD Postgres.
- * Importa solo con rutas relativas porque el CLI (`pnpm auth:migrate`) carga
- * este archivo fuera de Next.
+ * Better Auth: usuarios y sesiones en tablas propias de la misma base D1.
+ * Las tablas están definidas en db/schema.ts (user, session, account, verification).
  */
 export const auth = betterAuth({
-  database: new Pool({ connectionString: process.env.DATABASE_URL }),
+  database: drizzleAdapter(getDb(), {
+    provider: "sqlite",
+    schema: { user: schema.user, session: schema.session, account: schema.account, verification: schema.verification },
+  }),
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
 
   user: {
     additionalFields: {
       // Marca de superadmin. No se puede setear desde el cliente.
-      isSuperadmin: { type: "boolean", defaultValue: false, input: false, fieldName: "is_superadmin" },
+      isSuperadmin: { type: "boolean", defaultValue: false, input: false },
     },
   },
 

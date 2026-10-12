@@ -1,13 +1,17 @@
 import type { Product, ProductImageRow } from "./types-catalog"
 
-/** Embed PostgREST de las imágenes de un producto (tabla product_images). */
-export const PRODUCT_IMAGES_EMBED = "product_images(public_id,sort_order,is_cover)"
+/** Relaciones que se cargan junto a un producto (`db.query.products.findMany({ with })`). */
+export const PRODUCT_WITH = {
+  categories: { columns: { id: true, name: true, slug: true, is_visible: true } },
+  subcategories: { columns: { id: true, name: true, slug: true } },
+  product_images: { columns: { public_id: true, sort_order: true, is_cover: true } },
+} as const
 
 /**
  * Deriva `cover_image` y `gallery_images` desde las filas de product_images.
  * La portada es la fila is_cover; la galería, el resto por sort_order.
  */
-export function withImages(row: Product): Product {
+export function withImages(row: Omit<Product, "cover_image" | "gallery_images">): Product {
   const images: ProductImageRow[] = [...(row.product_images ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order
   )

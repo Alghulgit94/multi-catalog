@@ -1,5 +1,5 @@
 /**
- * UI-shaped types for the public catalog (mapped from raw Supabase rows).
+ * UI-shaped types for the public catalog (mapped from raw D1 rows).
  * Separate from types-catalog.ts which mirrors the DB schema.
  */
 

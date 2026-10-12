@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import type { Category } from "@/lib/types-catalog"
-import { buildCloudinaryUrl, toAssetVersion } from "@/lib/types-catalog"
+import { toAssetVersion } from "@/lib/types-catalog"
+import { buildImageUrl } from "@/lib/media-urls"
 import { createCategory, updateCategory, uploadCategoryImage } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +25,7 @@ export function CategoriaForm({ category }: Props) {
   const [imagePath, setImagePath] = useState(category?.image_path || "")
   const [imagePreview, setImagePreview] = useState(
     category?.image_path
-      ? buildCloudinaryUrl(category.image_path, 400, toAssetVersion(category.updated_at))
+      ? buildImageUrl(category.image_path, 400, toAssetVersion(category.updated_at))
       : ""
   )
   const [uploadingImage, setUploadingImage] = useState(false)

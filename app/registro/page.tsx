@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { bricolage, figtree } from "@/components/landing/fonts"
 import { OnboardingFlow, type OnboardingInicial } from "@/components/onboarding/OnboardingFlow"
 import { getSession, getStoreContext } from "@/lib/auth/session"
-import { getImageUrl } from "@/lib/cloudinary-catalog"
+import { getImageUrl } from "@/lib/media-urls"
 import { ONBOARDING_MOCK } from "@/lib/onboarding/mock-api"
 import { getDraft } from "@/lib/onboarding/draft"
 import { mensajeDeError } from "@/lib/onboarding/mensajes"
@@ -47,7 +47,7 @@ export default async function RegistroPage({ searchParams }: { searchParams: Pro
     whatsapp: data.whatsapp?.startsWith(PREFIJO_PAIS) ? data.whatsapp.slice(PREFIJO_PAIS.length) : (data.whatsapp ?? ""),
     plan: planInicial,
     logoUrl: draft?.logo_public_id
-      ? getImageUrl(draft.logo_public_id, { width: 400, quality: "auto", format: "auto" })
+      ? getImageUrl(draft.logo_public_id, { width: 400 })
       : null,
   }
 

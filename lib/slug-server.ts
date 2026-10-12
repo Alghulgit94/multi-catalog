@@ -1,5 +1,7 @@
 import { slugify } from "./slug"
+import { like } from "drizzle-orm"
 import type { StoreDb } from "./data/store-db"
+import { dbErrorCode, schema } from "./db"
 
 /** Tope de sufijos a probar antes de caer al desempate por timestamp. */
 const MAX_SLUG_ATTEMPTS = 200
@@ -19,13 +21,13 @@ function normalizeSlugRoot(base: string, fallbackName: string): string {
  * `-2`, `-3`, … si hace falta.
  *
  * `categories`, `subcategories` y `products` tienen UNIQUE (store_id, slug),
- * así que sin esto un nombre repetido revienta con el error 23505 de Postgres.
+ * así que sin esto un nombre repetido revienta con "UNIQUE constraint failed".
  *
  * `excludeId` es la fila que se está editando: excluirla hace que un slug sin
  * cambios pase intacto, en vez de auto-desambiguarse contra sí mismo.
  *
  * Si la consulta falla devuelve la raíz sin tocar. El UNIQUE de la BD sigue
- * siendo la red de seguridad y quien llama traduce el 23505 a un mensaje legible.
+ * siendo la red de seguridad y quien llama traduce el error a un mensaje legible.
  */
 export async function ensureUniqueSlug(
   db: StoreDb,
@@ -36,11 +38,12 @@ export async function ensureUniqueSlug(
 ): Promise<string> {
   const root = normalizeSlugRoot(base, fallbackName)
 
-  // `*` es el comodín de PostgREST. Trae `root` y todos los `root-N` de una sola vez.
-  const rows = await db.select<{ id: string; slug: string }>(
-    table,
-    `select=id,slug&slug=like.${encodeURIComponent(root)}*`
-  )
+  // Trae `root` y todos los `root-N` de una sola vez. Los slugs no tienen `%` ni `_`.
+  const t = schema[table]
+  const rows = await db.db
+    .select({ id: t.id, slug: t.slug })
+    .from(t)
+    .where(db.where(t, like(t.slug, `${root}%`)))
 
   const taken = new Set(rows.filter((r) => r.id !== excludeId).map((r) => r.slug))
 
@@ -55,8 +58,8 @@ export async function ensureUniqueSlug(
 }
 
 /**
- * Traduce el error de PostgREST a un mensaje en español.
- * El 23505 (violación de UNIQUE) es el único que el usuario puede resolver solo.
+ * Traduce el error de D1 a un mensaje en español.
+ * La violación de UNIQUE es la única que el usuario puede resolver solo.
  */
 export function describeWriteError(
   err: unknown,
@@ -64,12 +67,13 @@ export function describeWriteError(
   slug: string,
   fallback: string
 ): string {
-  const e = err as { code?: string; message?: string } | null
-  if (e?.code === "23505") {
+  const code = dbErrorCode(err)
+  if (code === "unique") {
     return `Ya existe ${entity} con el slug «${slug}». Probá con otro.`
   }
-  if (e?.code === "23503") {
+  if (code === "foreign_key") {
     return "La categoría o subcategoría elegida no es válida."
   }
-  return e?.message || fallback
+  console.error("[db] error de escritura", err)
+  return fallback
 }

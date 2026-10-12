@@ -1,8 +1,6 @@
-import { CLOUDINARY_CLOUD_NAME, PLACEHOLDER_IMAGE_URL } from "./catalog-config"
-
 /**
  * Types for the catalog: products, categories and subcategories.
- * Mirror the tables in db/schema.sql.
+ * Mirror the tables in db/schema.ts.
  */
 
 export interface Category {
@@ -10,7 +8,7 @@ export interface Category {
   name: string
   slug: string
   description: string | null
-  image_path: string | null   // Cloudinary public_id completo
+  image_path: string | null   // key de R2 completa
   sort_order: number
   is_active: boolean
   is_visible: boolean
@@ -65,19 +63,13 @@ export interface Product {
 
 export const MAX_GALLERY_IMAGES = 4
 
-export interface CloudinaryUploadResult {
-  public_id: string
-  secure_url: string
-  width: number
-  height: number
-}
 
 /**
  * Convierte un `updated_at` en un sufijo de versión estable para romper caché.
  *
- * Las imágenes se reemplazan conservando el mismo public_id, así que la URL no
- * cambia y Cloudinary la sirve con `max-age=2592000` (30 días): sin esto, una
- * foto reemplazada sigue viéndose vieja en el navegador durante un mes.
+ * Las imágenes se reemplazan conservando la misma key, así que la URL no
+ * cambia y /media la sirve con caché larga: sin esto, una foto reemplazada
+ * sigue viéndose vieja en el navegador.
  */
 export function toAssetVersion(updatedAt?: string | null): string | null {
   if (!updatedAt) return null
@@ -85,13 +77,3 @@ export function toAssetVersion(updatedAt?: string | null): string | null {
   return Number.isNaN(ms) ? null : String(ms)
 }
 
-/** Builds a Cloudinary URL from a stored public_id (usable from client components). */
-export function buildCloudinaryUrl(
-  publicId: string | null,
-  width = 800,
-  version?: string | null
-): string {
-  if (!publicId) return PLACEHOLDER_IMAGE_URL
-  const suffix = version ? `?v=${version}` : ""
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/w_${width},q_auto,f_auto/${publicId}${suffix}`
-}

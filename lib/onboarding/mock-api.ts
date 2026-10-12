@@ -1,6 +1,6 @@
 /**
  * Modo de prueba del onboarding (NEXT_PUBLIC_ONBOARDING_MOCK=1): reemplaza las
- * server actions para validar solo la UI. No toca la BD, Cloudinary ni auth;
+ * server actions para validar solo la UI. No toca la BD, R2 ni auth;
  * todo vive en memoria del navegador.
  */
 import { cuentaSchema, planSchema, tiendaSchema, whatsappSchema } from "./schemas"

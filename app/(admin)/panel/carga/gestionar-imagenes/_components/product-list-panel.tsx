@@ -1,6 +1,7 @@
 "use client"
 
-import { buildCloudinaryUrl, toAssetVersion } from "@/lib/types-catalog"
+import { toAssetVersion } from "@/lib/types-catalog"
+import { buildImageUrl } from "@/lib/media-urls"
 import { cn } from "@/lib/utils"
 import type { Product } from "@/lib/types-catalog"
 
@@ -44,8 +45,8 @@ export function ProductListPanel({
           const isComplete = Boolean(edit?.coverPublicId)
           const isSelected = product.id === selectedId
           const thumbUrl = edit?.coverPublicId
-            ? buildCloudinaryUrl(edit.coverPublicId, 128, toAssetVersion(product.updated_at))
-            : buildCloudinaryUrl(null, 128)
+            ? buildImageUrl(edit.coverPublicId, 128, toAssetVersion(product.updated_at))
+            : buildImageUrl(null, 128)
 
           return (
             <button

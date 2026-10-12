@@ -16,7 +16,7 @@ import {
 import { generateWhatsAppLink, formatPrice } from "@/lib/catalog-helpers"
 import { absoluteStoreUrl, storeCatalogPath, storeHomePath, storeProductPath } from "@/lib/store-links"
 import { getSiteUrl } from "@/lib/site-url"
-import { OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/lib/cloudinary-catalog"
+import { OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/lib/media-urls"
 
 interface PageProps {
   params: Promise<{ store: string; slug: string }>

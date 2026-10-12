@@ -2,7 +2,7 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    remotePatterns: [{ hostname: "res.cloudinary.com" }, { hostname: "www.ughogar.com" }],
+    remotePatterns: [{ hostname: "www.ughogar.com" }],
   },
   experimental: {
     serverActions: {

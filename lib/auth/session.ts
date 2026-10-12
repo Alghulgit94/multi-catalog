@@ -2,7 +2,8 @@ import { cache } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "./server"
-import { restJson } from "../data/rest"
+import { asc, eq } from "drizzle-orm"
+import { getDb, schema } from "../db"
 import { storeDb, type StoreDb } from "../data/store-db"
 import type { MemberRole, StoreRow } from "../store-types"
 
@@ -38,10 +39,12 @@ export const getStoreContext = cache(async (): Promise<StoreContext | null> => {
   const session = await getSession()
   if (!session) return null
 
-  const rows = await restJson<Array<{ role: MemberRole; stores: StoreRow }>>(
-    `store_members?user_id=eq.${encodeURIComponent(session.user.id)}&select=role,stores(*)&order=created_at.asc&limit=1`
-  )
-  const membership = rows?.[0]
+  const membership = await getDb().query.store_members.findFirst({
+    where: eq(schema.store_members.user_id, session.user.id),
+    columns: { role: true },
+    with: { stores: true },
+    orderBy: asc(schema.store_members.created_at),
+  })
   if (!membership?.stores) return null
 
   return {

@@ -12,12 +12,12 @@ export const CASOS: Caso[] = [
     url: 'https://www.ughogar.com/catalogo', // cambiar al catálogo en Katalo cuando exista
     logo: 'https://www.ughogar.com/img/brand/ug-logo.png',
     fotos: [
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/sofa/poltrona-2-cover?v=1790795872712', alt: 'Poltrona' },
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/ESPEJO/espejo-de-mimbre-cover?v=1789072785500', alt: 'Espejo de mimbre' },
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/decoracion/lampara-de-mesa-mariposa-cover?v=1789223315918', alt: 'Lámpara de mesa mariposa' },
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/blanqueria/set-de-3-cestas-cover?v=1788811202566', alt: 'Set de 3 cestas' },
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/decoracion/florero-ceramica-cover?v=1789152047723', alt: 'Florero cerámica' },
-      { src: 'https://res.cloudinary.com/dgxwduhdc/image/upload/w_800,q_auto,f_auto/catalog/products/decoracion/cuadro-deco-cover?v=1789044807690', alt: 'Cuadro deco' },
+      { src: '/landing/poltrona-2.webp', alt: 'Poltrona' },
+      { src: '/landing/espejo-de-mimbre.webp', alt: 'Espejo de mimbre' },
+      { src: '/landing/lampara-de-mesa-mariposa.webp', alt: 'Lámpara de mesa mariposa' },
+      { src: '/landing/set-de-3-cestas.webp', alt: 'Set de 3 cestas' },
+      { src: '/landing/florero-ceramica.webp', alt: 'Florero cerámica' },
+      { src: '/landing/cuadro-deco.webp', alt: 'Cuadro deco' },
     ],
     acento: 'var(--nanduti-fucsia)',
   },

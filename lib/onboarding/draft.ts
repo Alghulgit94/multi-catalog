@@ -1,10 +1,20 @@
 import { cookies } from "next/headers"
-import { restFetch, restJson } from "../data/rest"
+import { and, eq, gt, isNull } from "drizzle-orm"
+import { getDb, schema } from "../db"
 import type { DraftData } from "./schemas"
 
 export const DRAFT_COOKIE = "kt_draft"
 const DRAFT_DAYS = 7
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const { onboarding_drafts: drafts } = schema
+const DRAFT_COLUMNS = {
+  id: drafts.id,
+  data: drafts.data,
+  logo_public_id: drafts.logo_public_id,
+  expires_at: drafts.expires_at,
+  claimed_at: drafts.claimed_at,
+}
 
 export interface DraftRow {
   id: string
@@ -33,20 +43,17 @@ async function escribirCookie(id: string) {
 export async function getDraft(): Promise<DraftRow | null> {
   const id = await leerCookie()
   if (!id) return null
-  const rows = await restJson<DraftRow[]>(
-    `onboarding_drafts?id=eq.${id}&claimed_at=is.null&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id,data,logo_public_id,expires_at,claimed_at&limit=1`
-  )
-  return rows?.[0] ?? null
+  const [row] = await getDb()
+    .select(DRAFT_COLUMNS)
+    .from(drafts)
+    .where(and(eq(drafts.id, id), isNull(drafts.claimed_at), gt(drafts.expires_at, new Date().toISOString())))
+    .limit(1)
+  return row ?? null
 }
 
 async function createDraft(data: DraftData): Promise<DraftRow | null> {
   const expires = new Date(Date.now() + DRAFT_DAYS * 24 * 60 * 60 * 1000).toISOString()
-  const rows = await restJson<DraftRow[]>("onboarding_drafts?select=id,data,logo_public_id,expires_at,claimed_at", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ data, expires_at: expires }),
-  })
-  const row = rows?.[0]
+  const [row] = await getDb().insert(drafts).values({ data, expires_at: expires }).returning(DRAFT_COLUMNS)
   if (!row) return null
   await escribirCookie(row.id)
   return row
@@ -57,29 +64,28 @@ export async function saveDraft(patch: DraftData): Promise<DraftRow | null> {
   const actual = await getDraft()
   if (!actual) return createDraft(patch)
 
-  const rows = await restJson<DraftRow[]>(
-    `onboarding_drafts?id=eq.${actual.id}&select=id,data,logo_public_id,expires_at,claimed_at`,
-    {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ data: { ...actual.data, ...patch } }),
-    }
-  )
-  return rows?.[0] ?? null
+  const [row] = await getDb()
+    .update(drafts)
+    .set({ data: { ...actual.data, ...patch } })
+    .where(eq(drafts.id, actual.id))
+    .returning(DRAFT_COLUMNS)
+  return row ?? null
 }
 
 export async function setDraftLogo(draftId: string, publicId: string | null): Promise<boolean> {
-  const res = await restFetch(`onboarding_drafts?id=eq.${draftId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ logo_public_id: publicId }),
-  })
-  return res.ok
+  try {
+    await getDb().update(drafts).set({ logo_public_id: publicId }).where(eq(drafts.id, draftId))
+    return true
+  } catch (e) {
+    console.error("[onboarding] no se pudo guardar el logo del borrador", e)
+    return false
+  }
 }
 
 export async function claimDraft(draftId: string, userId: string): Promise<void> {
-  await restFetch(`onboarding_drafts?id=eq.${draftId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ claimed_at: new Date().toISOString(), claimed_by: userId }),
-  })
+  await getDb()
+    .update(drafts)
+    .set({ claimed_at: new Date().toISOString(), claimed_by: userId })
+    .where(eq(drafts.id, draftId))
   ;(await cookies()).delete(DRAFT_COOKIE)
 }

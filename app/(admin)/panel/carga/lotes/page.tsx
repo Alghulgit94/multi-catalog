@@ -44,7 +44,7 @@ export default async function CargaLotesPage() {
               {[
                 "Usa el formato de plantilla oficial",
                 "Verifica los códigos SKU antes de cargar",
-                "Las imágenes deben estar en Cloudinary",
+                "Subí las imágenes desde el panel antes de cargar el lote",
               ].map((tip, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                   <span className="material-symbols-outlined text-primary text-[16px] mt-0.5 shrink-0">

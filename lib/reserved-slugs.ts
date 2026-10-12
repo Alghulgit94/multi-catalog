@@ -20,6 +20,7 @@ export const RESERVED_STORE_SLUGS: readonly string[] = [
   "katalo",
   "_next",
   "onboarding",
+  "media",
 ]
 
 export const STORE_SLUG_MIN = 3

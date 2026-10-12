@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Product, Category } from "@/lib/types-catalog"
-import { buildCloudinaryUrl, toAssetVersion } from "@/lib/types-catalog"
+import { toAssetVersion } from "@/lib/types-catalog"
+import { buildImageUrl } from "@/lib/media-urls"
 import { updateProductImages } from "../../../productos/actions"
 import { ProductListPanel } from "./product-list-panel"
 import { CoverUpload } from "./cover-upload"
@@ -62,12 +63,12 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
       const version = toAssetVersion(p.updated_at)
       const galleryItems: GalleryItem[] = (p.gallery_images ?? []).map((pid, i) => ({
         publicId: pid,
-        preview: buildCloudinaryUrl(pid, 400, version),
+        preview: buildImageUrl(pid, 400, version),
         label: `Imagen ${String(i + 1).padStart(2, "0")}`,
       }))
       initial[p.id] = {
         coverPublicId: p.cover_image ?? null,
-        coverPreview: buildCloudinaryUrl(p.cover_image, 800, version),
+        coverPreview: buildImageUrl(p.cover_image, 800, version),
         galleryItems,
         isDirty: false,
       }
@@ -181,7 +182,7 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
               onRemove={() =>
                 updateEdit(selectedProduct.id, {
                   coverPublicId: null,
-                  coverPreview: buildCloudinaryUrl(null),
+                  coverPreview: buildImageUrl(null),
                 })
               }
             />

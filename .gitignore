@@ -78,3 +78,10 @@ CLAUDE.md
 
 # Especificación de producto (documento interno)
 docs/especificacion-etapa-1.md
+.vinext/
+.cloudflare/
+
+# Secrets locales de Cloudflare (cf dev)
+.dev.vars
+.dev.vars.*
+!.dev.vars.example

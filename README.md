@@ -4,15 +4,26 @@ Plataforma de catálogos multi-tienda: cada comercio se registra, carga sus prod
 
 ## Stack
 
-Next.js 16 (App Router) · PostgreSQL en Supabase (solo como base de datos) · Better Auth · Cloudinary · Resend · Tailwind 4 / shadcn.
+Todo en Cloudflare: Next.js 16 (App Router) sobre **vinext** en **Workers** · **D1** (SQLite) con Drizzle · Better Auth · **R2** + **Images** para las fotos · Resend · Tailwind 4 / shadcn. Se maneja con el CLI [`cf`](https://developers.cloudflare.com/cf/) (beta); Wrangler solo como respaldo (`wrangler tail`).
 
 ## Puesta en marcha
 
+Requiere Node 22.18+ y `cf` (`npm i -g cf`, luego `cf auth login`).
+
 1. `pnpm install`
-2. Crear un proyecto nuevo de Supabase y copiar `.env.local.example` a `.env.local` con sus valores.
-3. Crear las tablas de Better Auth: `pnpm auth:migrate`.
-4. Ejecutar `db/schema.sql` en el SQL Editor de Supabase (y opcionalmente `db/seed.sql` para dos tiendas demo).
-5. `pnpm dev`
+2. Copiar `.dev.vars.example` a `.dev.vars` (secrets locales) y `.env.example` a `.env.local` (variables públicas).
+3. Crear las tablas en la D1 local: `pnpm db:migrate:local` (y opcionalmente `pnpm db:seed:local` para dos tiendas demo).
+4. `pnpm dev` → http://localhost:3000
+
+| Comando | Qué hace |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm preview` | Desarrollo, build y preview local del Worker |
+| `pnpm deploy` | Deploy a Cloudflare Workers |
+| `pnpm db:generate` | Genera una migración SQL desde `db/schema.ts` (drizzle-kit) |
+| `pnpm db:migrate:local` / `db:migrate:remote` | Aplica las migraciones a la D1 local / de producción |
+| `pnpm typecheck` | Genera los tipos de los bindings y corre `tsc` |
+
+Recursos (en `cloudflare.config.ts`): D1 `katalo-db` (`env.DB`), R2 `katalo-media` (`env.MEDIA`), Images (`env.IMAGES`) y el cron diario (`0 9 * * *` → `worker/index.ts` → `/api/cron/daily`). El estado local (D1, R2, caché) vive en `.cloudflare/state`.
 
 ## Estructura
 
@@ -30,7 +41,8 @@ Next.js 16 (App Router) · PostgreSQL en Supabase (solo como base de datos) · B
 - `lib/reserved-slugs.ts`: nombres de tienda reservados y validación del slug.
 - `lib/store-links.ts`: única función que genera links de tienda.
 - `config/`: contenido editorial de la landing (planes, casos, preguntas, textos de plataforma) — ver `docs/katalo-brand.md`.
-- `db/`: esquema y datos de demostración.
+- `db/`: esquema Drizzle (`schema.ts`), migraciones (`migrations/`) y datos de demostración (`seeds/`).
+- `lib/media.ts` / `lib/media-urls.ts` + `app/media/[...key]`: fotos en R2, servidas redimensionadas con Cloudflare Images.
 
 ## Estado de la etapa 1
 

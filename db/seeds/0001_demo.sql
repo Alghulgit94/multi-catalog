@@ -1,4 +1,5 @@
 -- Tiendas de demostración (sin dueño: asignalas a un usuario desde store_members).
+-- Solo local: pnpm db:seed:local (se registra en la tabla d1_seeds, se aplica una vez).
 
 insert into stores (id, name, slug, status, primary_color, hero_eyebrow, hero_title, hero_subtitle,
                     shipping_note, tagline, whatsapp, email, address, city)
@@ -16,8 +17,8 @@ insert into categories (id, store_id, name, slug, sort_order) values
   ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1', 'Living', 'living', 1),
   ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a2', 'Remeras', 'remeras', 1);
 
-insert into products (store_id, category_id, name, slug, short_description, description, price, featured) values
-  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1',
-   'Sillón de ejemplo', 'sillon-ejemplo', 'Sillón de tres cuerpos.', 'Producto de demostración.', 1500000, true),
-  ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000b2',
-   'Remera de ejemplo', 'remera-ejemplo', 'Remera de algodón.', 'Producto de demostración.', 85000, true);
+insert into products (id, store_id, category_id, name, slug, short_description, description, price, featured) values
+  ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1',
+   'Sillón de ejemplo', 'sillon-ejemplo', 'Sillón de tres cuerpos.', 'Producto de demostración.', 1500000, 1),
+  ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000b2',
+   'Remera de ejemplo', 'remera-ejemplo', 'Remera de algodón.', 'Producto de demostración.', 85000, 1);

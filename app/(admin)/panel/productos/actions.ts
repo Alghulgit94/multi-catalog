@@ -2,17 +2,15 @@
 
 import { revalidatePath } from "next/cache"
 import { MAX_GALLERY_IMAGES } from "@/lib/types-catalog"
-import {
-  belongsToStore,
-  buildUploadParams,
-  destroyCloudinaryAssets,
-  uploadImageToCloudinary,
-  type ImageType,
-} from "@/lib/cloudinary-upload"
+import { eq } from "drizzle-orm"
+import { belongsToStore, buildUploadParams, destroyAssets, uploadImage, type ImageType, type UploadOutcome } from "@/lib/media"
 import { requireStoreContext } from "@/lib/auth/session"
+import { schema } from "@/lib/db"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
 import type { StoreDb } from "@/lib/data/store-db"
 import { toImageRows } from "@/lib/product-images"
+
+const { products, product_images } = schema
 
 export type ProductWriteResult = {
   success?: boolean
@@ -40,18 +38,35 @@ function readImages(formData: FormData, storeId: string) {
   }
 }
 
-/** Reemplaza las imágenes de un producto por las dadas (portada + galería). */
+/**
+ * Reemplaza las imágenes de un producto por las dadas (portada + galería).
+ * Borrado e inserción van en un batch de D1 (transacción): nunca queda a medias.
+ */
 async function replaceProductImages(
   db: StoreDb,
   productId: string,
   cover: string | null,
   gallery: string[]
 ): Promise<boolean> {
-  const del = await db.remove("product_images", `product_id=eq.${productId}`)
-  if (!del.ok) return false
-  const rows = toImageRows(cover, gallery).map((r) => ({ ...r, product_id: productId }))
-  if (rows.length === 0) return true
-  return (await db.insertMany("product_images", rows)).ok
+  const rows = toImageRows(cover, gallery).map((r) => db.withStore({ ...r, product_id: productId }))
+  const remove = db.db.delete(product_images).where(db.where(product_images, eq(product_images.product_id, productId)))
+  try {
+    if (rows.length === 0) await remove
+    else await db.db.batch([remove, db.db.insert(product_images).values(rows)])
+    return true
+  } catch (e) {
+    console.error("[productos] no se pudieron guardar las imágenes", e)
+    return false
+  }
+}
+
+/**
+ * La FK products.subcategory_id es simple (SQLite no puede anular solo una
+ * columna de una FK compuesta), así que la pertenencia a la tienda se valida acá.
+ */
+async function subcategoryInStore(db: StoreDb, subcategoryId: string | null): Promise<boolean> {
+  if (!subcategoryId) return true
+  return (await db.count(schema.subcategories, eq(schema.subcategories.id, subcategoryId))) > 0
 }
 
 function buildProductBody(formData: FormData) {
@@ -79,6 +94,9 @@ export async function createProduct(formData: FormData): Promise<ProductWriteRes
   const body = buildProductBody(formData)
   const images = readImages(formData, store.id)
 
+  if (!(await subcategoryInStore(db, body.subcategory_id))) {
+    return { error: "La categoría o subcategoría elegida no es válida." }
+  }
   if (!body.short_description?.trim()) {
     return { error: "La descripción corta es obligatoria" }
   }
@@ -92,22 +110,24 @@ export async function createProduct(formData: FormData): Promise<ProductWriteRes
 
   body.slug = await ensureUniqueSlug(db, "products", body.slug, body.name)
 
-  const res = await db.insert("products", body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  let created: { id: string; slug: string } | undefined
+  try {
+    ;[created] = await db.db
+      .insert(products)
+      .values(db.withStore(body))
+      .returning({ id: products.id, slug: products.slug })
+  } catch (err) {
     return { error: describeWriteError(err, "un producto", body.slug, "Error al crear producto") }
   }
+  if (!created) return { error: "Error al crear producto" }
 
-  const rows = await res.json()
-  const newId = rows[0]?.id as string
-  if (!(await replaceProductImages(db, newId, images.cover, images.gallery))) {
-    await db.remove("products", `id=eq.${newId}`)
+  if (!(await replaceProductImages(db, created.id, images.cover, images.gallery))) {
+    await db.db.delete(products).where(db.where(products, eq(products.id, created.id)))
     return { error: "Error al guardar las imágenes del producto" }
   }
   revalidatePath("/panel/productos")
   revalidatePath("/panel/dashboard")
-  return { success: true, id: rows[0]?.id, slug: rows[0]?.slug ?? body.slug }
+  return { success: true, id: created.id, slug: created.slug }
 }
 
 export async function updateProduct(id: string, formData: FormData): Promise<ProductWriteResult> {
@@ -115,6 +135,9 @@ export async function updateProduct(id: string, formData: FormData): Promise<Pro
   const base = buildProductBody(formData)
   const images = readImages(formData, store.id)
 
+  if (!(await subcategoryInStore(db, base.subcategory_id))) {
+    return { error: "La categoría o subcategoría elegida no es válida." }
+  }
   if (!base.short_description?.trim()) {
     return { error: "La descripción corta es obligatoria" }
   }
@@ -131,10 +154,9 @@ export async function updateProduct(id: string, formData: FormData): Promise<Pro
 
   const body = base
 
-  const res = await db.update("products", `id=eq.${id}`, body)
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+  try {
+    await db.db.update(products).set(db.safe(body)).where(db.where(products, eq(products.id, id)))
+  } catch (err) {
     return { error: describeWriteError(err, "un producto", body.slug, "Error al actualizar producto") }
   }
 
@@ -148,11 +170,12 @@ export async function updateProduct(id: string, formData: FormData): Promise<Pro
   return { success: true, id, slug: body.slug }
 }
 
-type AssetRow = { public_id: string }
-
-/** public_id de las imagenes de un producto. */
+/** Keys de las imagenes de un producto. */
 async function readProductAssets(db: StoreDb, id: string): Promise<string[]> {
-  const rows = await db.select<AssetRow>("product_images", `product_id=eq.${id}&select=public_id`)
+  const rows = await db.db
+    .select({ public_id: product_images.public_id })
+    .from(product_images)
+    .where(db.where(product_images, eq(product_images.product_id, id)))
   return rows.map((r) => r.public_id)
 }
 
@@ -161,7 +184,10 @@ async function readProductAssets(db: StoreDb, id: string): Promise<string[]> {
  * Ante cualquier duda hay que tratar todo como "en uso": no borrar de mas.
  */
 async function findAssetsStillInUse(db: StoreDb): Promise<Set<string>> {
-  const rows = await db.select<AssetRow>("product_images", "select=public_id")
+  const rows = await db.db
+    .select({ public_id: product_images.public_id })
+    .from(product_images)
+    .where(db.where(product_images))
   return new Set(rows.map((r) => r.public_id))
 }
 
@@ -171,17 +197,18 @@ export async function deleteProduct(id: string) {
   // Leer las imágenes ANTES del DELETE: después ya no hay de dónde sacarlas.
   const assets = await readProductAssets(db, id)
 
-  const res = await db.remove("products", `id=eq.${id}`)
-
-  if (!res.ok) {
+  try {
+    await db.db.delete(products).where(db.where(products, eq(products.id, id)))
+  } catch (err) {
+    console.error("[productos] no se pudo eliminar", err)
     return { error: "Error al eliminar producto" }
   }
 
   // Recién con el DELETE confirmado, y en modo best-effort: el producto ya no
-  // existe, así que un fallo de Cloudinary no debe reportarse como error.
+  // existe, así que un fallo de R2 no debe reportarse como error.
   if (assets.length > 0) {
     const stillInUse = await findAssetsStillInUse(db)
-    await destroyCloudinaryAssets(store.id, assets.filter((a) => !stillInUse.has(a)))
+    await destroyAssets(store.id, assets.filter((a) => !stillInUse.has(a)))
   }
 
   revalidatePath("/panel/productos")
@@ -191,9 +218,10 @@ export async function deleteProduct(id: string) {
 
 export async function toggleProductActive(id: string, isActive: boolean) {
   const { db } = await requireStoreContext()
-  const res = await db.update("products", `id=eq.${id}`, { is_active: isActive })
-
-  if (!res.ok) {
+  try {
+    await db.db.update(products).set({ is_active: isActive }).where(db.where(products, eq(products.id, id)))
+  } catch (err) {
+    console.error("[productos] no se pudo cambiar el estado", err)
     return { error: "Error al actualizar estado" }
   }
 
@@ -216,8 +244,8 @@ export async function updateProductImages(
     gallery_images: data.gallery_images.filter((a) => belongsToStore(store.id, a)),
   }
 
-  // Los public_id de galería son únicos por subida, así que una foto quitada no
-  // se recicla nunca: hay que borrarla o queda huérfana en Cloudinary para siempre.
+  // Las keys de galería son únicas por subida, así que una foto quitada no se
+  // recicla nunca: hay que borrarla o queda huérfana en R2 para siempre.
   const previous = await readProductAssets(db, id)
 
   if (!(await replaceProductImages(db, id, images.cover_image, images.gallery_images))) {
@@ -225,16 +253,19 @@ export async function updateProductImages(
   }
   // Las imágenes ya no viven en la fila del producto: se actualiza updated_at
   // para que el sufijo ?v= rompa el caché de las fotos reemplazadas.
-  await db.update("products", `id=eq.${id}`, { updated_at: new Date().toISOString() })
+  await db.db
+    .update(products)
+    .set({ updated_at: new Date().toISOString() })
+    .where(db.where(products, eq(products.id, id)))
 
   const kept = new Set([images.cover_image ?? "", ...images.gallery_images].filter(Boolean))
   const removed = previous.filter((a) => !kept.has(a))
 
-  // Best-effort y recién con el PATCH confirmado: las imágenes ya se guardaron
-  // bien, un fallo de Cloudinary no debe reportarse como error de guardado.
+  // Best-effort y recién con el update confirmado: las imágenes ya se guardaron
+  // bien, un fallo de R2 no debe reportarse como error de guardado.
   if (removed.length > 0) {
     const stillInUse = await findAssetsStillInUse(db)
-    await destroyCloudinaryAssets(store.id, removed.filter((a) => !stillInUse.has(a)))
+    await destroyAssets(store.id, removed.filter((a) => !stillInUse.has(a)))
   }
 
   revalidatePath("/panel/productos")
@@ -247,12 +278,12 @@ export async function uploadProductImage(
   productSlug: string,
   imageType: ImageType,
   index?: number
-) {
+): Promise<UploadOutcome> {
   const { store } = await requireStoreContext()
   if (!file || file.size === 0) return { error: "Archivo inválido" }
   if (!productSlug) return { error: "productSlug es obligatorio" }
   if (imageType !== "cover" && imageType !== "gallery") return { error: "imageType inválido" }
 
   const { assetFolder, publicId } = buildUploadParams(store.id, productSlug, imageType, index)
-  return uploadImageToCloudinary(file, assetFolder, publicId)
+  return uploadImage(file, assetFolder, publicId)
 }

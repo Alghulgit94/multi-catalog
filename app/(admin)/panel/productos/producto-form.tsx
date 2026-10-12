@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { Product, Category, Subcategory } from "@/lib/types-catalog"
-import { buildCloudinaryUrl, toAssetVersion, MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-catalog"
+import { toAssetVersion, MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-catalog"
+import { buildImageUrl } from "@/lib/media-urls"
 import { createProduct, updateProduct, updateProductImages, uploadProductImage } from "./actions"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
 import { Button } from "@/components/ui/button"
@@ -47,7 +48,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
       ? {
           status: "uploaded",
           publicId: product.cover_image,
-          preview: buildCloudinaryUrl(product.cover_image, 400, toAssetVersion(product.updated_at)),
+          preview: buildImageUrl(product.cover_image, 400, toAssetVersion(product.updated_at)),
         }
       : { status: "empty" }
   )
@@ -58,7 +59,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     (product?.gallery_images || []).map((pid) => ({
       status: "uploaded",
       publicId: pid,
-      preview: buildCloudinaryUrl(pid, 200, toAssetVersion(product?.updated_at)),
+      preview: buildImageUrl(pid, 200, toAssetVersion(product?.updated_at)),
     }))
   )
   const galleryFileRef = useRef<HTMLInputElement>(null)
@@ -150,7 +151,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     // ── 1. Guardar en la BD PRIMERO ──────────────────────────────────────────
     // Las imágenes se suben recién después, con el slug ya confirmado por el
     // servidor. Al revés (como estaba antes) un slug duplicado sobrescribía en
-    // Cloudinary las fotos del producto existente aunque el insert fallara.
+    // R2 las fotos del producto existente aunque el insert fallara.
     const hasPendingUploads =
       cover.status === "pending" || galleryItems.some((i) => i.status === "pending")
 
@@ -236,7 +237,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
       if (!r.ok) failures.push(`imagen ${r.index + 1} (${r.error})`)
     })
 
-    // Se persiste lo que sí subió, para no dejar assets huérfanos en Cloudinary.
+    // Se persiste lo que sí subió, para no dejar assets huérfanos en R2.
     const ok = galleryResults
       .filter((r): r is Extract<GalleryUploadResult, { ok: true }> => r.ok)
       .sort((a, b) => a.index - b.index)

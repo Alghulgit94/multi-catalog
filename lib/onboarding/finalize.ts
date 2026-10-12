@@ -1,5 +1,6 @@
-import { restFetch, restJson } from "../data/rest"
-import { renameCloudinaryAsset, storeAssetFolder } from "../cloudinary-upload"
+import { eq } from "drizzle-orm"
+import { dbErrorCode, getDb, schema } from "../db"
+import { renameAsset, storeAssetFolder } from "../media"
 import { DEFAULT_VERIFICATION_DAYS } from "../catalog-config"
 import { validateStoreSlug } from "../reserved-slugs"
 import { claimDraft, getDraft, type DraftRow } from "./draft"
@@ -11,8 +12,13 @@ export type FinalizeResult =
 
 /** ¿Hay una tienda con ese slug? Compara contra la BD (el formato se valida aparte). */
 export async function slugDisponible(slug: string): Promise<boolean> {
-  const rows = await restJson<Array<{ id: string }>>(`stores?slug=eq.${encodeURIComponent(slug)}&select=id&limit=1`)
-  return rows !== null && rows.length === 0
+  try {
+    const rows = await getDb().select({ id: schema.stores.id }).from(schema.stores).where(eq(schema.stores.slug, slug)).limit(1)
+    return rows.length === 0
+  } catch (e) {
+    console.error("[onboarding] no se pudo verificar el slug", e)
+    return false
+  }
 }
 
 /** Valida que el borrador pueda convertirse en tienda, sin crear nada. */
@@ -41,47 +47,38 @@ export async function crearTiendaDesdeBorrador(userId: string, userEmail: string
   const d = draft.data as Required<Pick<typeof draft.data, "nombre" | "slug" | "whatsapp">> & typeof draft.data
 
   const deadline = new Date(Date.now() + DEFAULT_VERIFICATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
-  const res = await restFetch("stores?select=id", {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      name: d.nombre,
-      slug: d.slug,
-      whatsapp: d.whatsapp,
-      email: userEmail,
-      plan_intent: d.plan ?? "gratis",
-      terms_accepted_at: new Date().toISOString(),
-      verification_deadline: deadline,
-    }),
-  })
+  const storeId = crypto.randomUUID()
+  const db = getDb()
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "")
-    console.error("[onboarding] no se pudo crear la tienda", res.status, body)
-    // 23505 = unique_violation: alguien tomó el slug entre la validación y el insert.
-    if (res.status === 409) return { ok: false, code: "slug_tomado", error: "Ese nombre de tienda ya no está disponible. Elegí otro." }
-    return { ok: false, code: "error", error: "No pudimos crear tu tienda. Probá de nuevo en un momento." }
-  }
-
-  const storeId = ((await res.json()) as Array<{ id: string }>)[0]?.id
-  if (!storeId) return { ok: false, code: "error", error: "No pudimos crear tu tienda. Probá de nuevo en un momento." }
-
-  const member = await restFetch("store_members", {
-    method: "POST",
-    body: JSON.stringify({ store_id: storeId, user_id: userId, role: "owner" }),
-  })
-  if (!member.ok) {
-    console.error("[onboarding] no se pudo crear la membresía", member.status, await member.text().catch(() => ""))
-    await restFetch(`stores?id=eq.${storeId}`, { method: "DELETE" })
+  // Tienda y membresía en un solo batch (D1 lo ejecuta como transacción): si
+  // falla cualquiera de los dos inserts no queda una tienda sin dueño.
+  try {
+    await db.batch([
+      db.insert(schema.stores).values({
+        id: storeId,
+        name: d.nombre,
+        slug: d.slug,
+        whatsapp: d.whatsapp,
+        email: userEmail,
+        plan_intent: d.plan ?? "gratis",
+        terms_accepted_at: new Date().toISOString(),
+        verification_deadline: deadline,
+      }),
+      db.insert(schema.store_members).values({ store_id: storeId, user_id: userId, role: "owner" }),
+    ])
+  } catch (e) {
+    console.error("[onboarding] no se pudo crear la tienda", e)
+    // UNIQUE: alguien tomó el slug entre la validación y el insert.
+    if (dbErrorCode(e) === "unique") return { ok: false, code: "slug_tomado", error: "Ese nombre de tienda ya no está disponible. Elegí otro." }
     return { ok: false, code: "error", error: "No pudimos crear tu tienda. Probá de nuevo en un momento." }
   }
 
   // El logo es un extra: si no se puede mover, la tienda igual queda creada.
   if (draft.logo_public_id) {
     const destino = `${storeAssetFolder(storeId, "brand")}/logo`
-    const nuevo = await renameCloudinaryAsset(draft.logo_public_id, destino)
+    const nuevo = await renameAsset(draft.logo_public_id, destino)
     if (nuevo) {
-      await restFetch(`stores?id=eq.${storeId}`, { method: "PATCH", body: JSON.stringify({ logo_path: nuevo }) })
+      await db.update(schema.stores).set({ logo_path: nuevo }).where(eq(schema.stores.id, storeId))
     }
   }
 

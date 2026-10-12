@@ -1,0 +1,17 @@
+# Copiar a .dev.vars (local, ignorado por git). En producción se cargan con
+# `cf deploy --secrets-file <archivo>` — nunca commitear valores reales.
+# Base de datos (D1), imágenes (R2 + Images) y cron se configuran en cloudflare.config.ts.
+
+# Better Auth
+BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+BETTER_AUTH_URL=http://localhost:3000
+# Login con Google (opcional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Emails (Resend). Sin API key los emails se imprimen en consola
+RESEND_API_KEY=
+EMAIL_FROM=Katalo <no-reply@tu-dominio.com>
+
+# Cron diario (el trigger scheduled lo envía como Authorization: Bearer <CRON_SECRET>)
+CRON_SECRET=generate-a-random-string
