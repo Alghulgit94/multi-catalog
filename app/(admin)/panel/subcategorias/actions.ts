@@ -34,7 +34,7 @@ export async function createSubcategory(formData: FormData): Promise<Subcategory
       .values(db.withStore(body))
       .returning({ id: subcategories.id, slug: subcategories.slug })
   } catch (err) {
-    return { error: describeWriteError(err, "una subcategoría", body.slug, "Error al crear subcategoría") }
+    return { error: describeWriteError(err, "una subcategoría", body.slug, "No pudimos crear la subcategoría. Probá de nuevo.") }
   }
 
   revalidatePath("/panel/subcategorias")
@@ -57,7 +57,7 @@ export async function updateSubcategory(id: string, formData: FormData): Promise
   try {
     await db.db.update(subcategories).set(db.safe(body)).where(db.where(subcategories, eq(subcategories.id, id)))
   } catch (err) {
-    return { error: describeWriteError(err, "una subcategoría", body.slug, "Error al actualizar subcategoría") }
+    return { error: describeWriteError(err, "una subcategoría", body.slug, "No pudimos guardar la subcategoría. Probá de nuevo.") }
   }
 
   revalidatePath("/panel/subcategorias")
@@ -71,7 +71,7 @@ export async function deleteSubcategory(id: string) {
     await db.db.delete(subcategories).where(db.where(subcategories, eq(subcategories.id, id)))
   } catch (err) {
     console.error("[subcategorias] no se pudo eliminar", err)
-    return { error: "Error al eliminar subcategoría" }
+    return { error: "No pudimos eliminar la subcategoría. Probá de nuevo." }
   }
 
   revalidatePath("/panel/subcategorias")

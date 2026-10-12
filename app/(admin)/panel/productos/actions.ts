@@ -98,14 +98,14 @@ export async function createProduct(formData: FormData): Promise<ProductWriteRes
     return { error: "La categoría o subcategoría elegida no es válida." }
   }
   if (!body.short_description?.trim()) {
-    return { error: "La descripción corta es obligatoria" }
+    return { error: "Escribí una descripción corta" }
   }
   if (!body.description?.trim()) {
-    return { error: "La descripción completa es obligatoria" }
+    return { error: "Escribí la descripción completa" }
   }
   const gallery = JSON.parse((formData.get("gallery_images") as string) || "[]")
   if (gallery.length > MAX_GALLERY_IMAGES) {
-    return { error: `Máximo ${MAX_GALLERY_IMAGES} imágenes en la galería` }
+    return { error: `La galería admite hasta ${MAX_GALLERY_IMAGES} fotos` }
   }
 
   body.slug = await ensureUniqueSlug(db, "products", body.slug, body.name)
@@ -117,13 +117,13 @@ export async function createProduct(formData: FormData): Promise<ProductWriteRes
       .values(db.withStore(body))
       .returning({ id: products.id, slug: products.slug })
   } catch (err) {
-    return { error: describeWriteError(err, "un producto", body.slug, "Error al crear producto") }
+    return { error: describeWriteError(err, "un producto", body.slug, "No pudimos crear el producto. Probá de nuevo.") }
   }
-  if (!created) return { error: "Error al crear producto" }
+  if (!created) return { error: "No pudimos crear el producto. Probá de nuevo." }
 
   if (!(await replaceProductImages(db, created.id, images.cover, images.gallery))) {
     await db.db.delete(products).where(db.where(products, eq(products.id, created.id)))
-    return { error: "Error al guardar las imágenes del producto" }
+    return { error: "No pudimos guardar las fotos del producto. Probá de nuevo." }
   }
   revalidatePath("/panel/productos")
   revalidatePath("/panel/dashboard")
@@ -139,14 +139,14 @@ export async function updateProduct(id: string, formData: FormData): Promise<Pro
     return { error: "La categoría o subcategoría elegida no es válida." }
   }
   if (!base.short_description?.trim()) {
-    return { error: "La descripción corta es obligatoria" }
+    return { error: "Escribí una descripción corta" }
   }
   if (!base.description?.trim()) {
-    return { error: "La descripción completa es obligatoria" }
+    return { error: "Escribí la descripción completa" }
   }
   const gallery = JSON.parse((formData.get("gallery_images") as string) || "[]")
   if (gallery.length > MAX_GALLERY_IMAGES) {
-    return { error: `Máximo ${MAX_GALLERY_IMAGES} imágenes en la galería` }
+    return { error: `La galería admite hasta ${MAX_GALLERY_IMAGES} fotos` }
   }
 
   // Excluir la propia fila: un slug sin cambios debe pasar intacto, no auto-desambiguarse.
@@ -157,11 +157,11 @@ export async function updateProduct(id: string, formData: FormData): Promise<Pro
   try {
     await db.db.update(products).set(db.safe(body)).where(db.where(products, eq(products.id, id)))
   } catch (err) {
-    return { error: describeWriteError(err, "un producto", body.slug, "Error al actualizar producto") }
+    return { error: describeWriteError(err, "un producto", body.slug, "No pudimos guardar el producto. Probá de nuevo.") }
   }
 
   if (!(await replaceProductImages(db, id, images.cover, images.gallery))) {
-    return { error: "Error al guardar las imágenes del producto" }
+    return { error: "No pudimos guardar las fotos del producto. Probá de nuevo." }
   }
 
   revalidatePath("/panel/productos")
@@ -201,7 +201,7 @@ export async function deleteProduct(id: string) {
     await db.db.delete(products).where(db.where(products, eq(products.id, id)))
   } catch (err) {
     console.error("[productos] no se pudo eliminar", err)
-    return { error: "Error al eliminar producto" }
+    return { error: "No pudimos eliminar el producto. Probá de nuevo." }
   }
 
   // Recién con el DELETE confirmado, y en modo best-effort: el producto ya no
@@ -222,7 +222,7 @@ export async function toggleProductActive(id: string, isActive: boolean) {
     await db.db.update(products).set({ is_active: isActive }).where(db.where(products, eq(products.id, id)))
   } catch (err) {
     console.error("[productos] no se pudo cambiar el estado", err)
-    return { error: "Error al actualizar estado" }
+    return { error: "No pudimos cambiar el estado. Probá de nuevo." }
   }
 
   revalidatePath("/panel/productos")
@@ -235,7 +235,7 @@ export async function updateProductImages(
   data: { cover_image: string | null; gallery_images: string[] }
 ) {
   if (data.gallery_images.length > MAX_GALLERY_IMAGES) {
-    return { error: `Máximo ${MAX_GALLERY_IMAGES} imágenes en la galería` }
+    return { error: `La galería admite hasta ${MAX_GALLERY_IMAGES} fotos` }
   }
 
   const { db, store } = await requireStoreContext()
@@ -249,7 +249,7 @@ export async function updateProductImages(
   const previous = await readProductAssets(db, id)
 
   if (!(await replaceProductImages(db, id, images.cover_image, images.gallery_images))) {
-    return { error: "Error al actualizar imágenes" }
+    return { error: "No pudimos guardar las fotos. Probá de nuevo." }
   }
   // Las imágenes ya no viven en la fila del producto: se actualiza updated_at
   // para que el sufijo ?v= rompa el caché de las fotos reemplazadas.
@@ -280,7 +280,7 @@ export async function uploadProductImage(
   index?: number
 ): Promise<UploadOutcome> {
   const { store } = await requireStoreContext()
-  if (!file || file.size === 0) return { error: "Archivo inválido" }
+  if (!file || file.size === 0) return { error: "Elegí una foto válida" }
   if (!productSlug) return { error: "productSlug es obligatorio" }
   if (imageType !== "cover" && imageType !== "gallery") return { error: "imageType inválido" }
 

@@ -1,16 +1,19 @@
 import { requireStoreContext } from "@/lib/auth/session"
+import { PageContainer, PageHeader } from "@/components/panel/page-header"
 import { CategoriaForm } from "../categoria-form"
 
 export default async function NuevaCategoriaPage() {
   await requireStoreContext()
 
   return (
-    <div>
-      <div className="px-8 pt-8 pb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Nueva Categoría</h1>
-        <p className="text-sm text-muted-foreground mt-1">Crear una nueva categoría de productos</p>
-      </div>
+    <PageContainer size="form">
+      <PageHeader
+        title="Nueva categoría"
+        back="/panel/categorias"
+        breadcrumb={[{ label: "Categorías", href: "/panel/categorias" }, { label: "Nueva categoría" }]}
+        className="mb-6"
+      />
       <CategoriaForm />
-    </div>
+    </PageContainer>
   )
 }

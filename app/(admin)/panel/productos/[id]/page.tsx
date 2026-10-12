@@ -1,6 +1,7 @@
+import { notFound } from "next/navigation"
 import { requireStoreContext } from "@/lib/auth/session"
-import { redirect, notFound } from "next/navigation"
 import { getProduct, getCategories, getSubcategories } from "@/lib/data/panel"
+import { PageContainer, PageHeader } from "@/components/panel/page-header"
 import { ProductoForm } from "../producto-form"
 
 interface Props {
@@ -20,12 +21,14 @@ export default async function EditarProductoPage({ params }: Props) {
   if (!product) notFound()
 
   return (
-    <div>
-      <div className="px-8 pt-8 pb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Editar Producto</h1>
-        <p className="text-sm text-muted-foreground mt-1">{product.name}</p>
-      </div>
+    <PageContainer size="form">
+      <PageHeader
+        title={product.name}
+        back="/panel/productos"
+        breadcrumb={[{ label: "Productos", href: "/panel/productos" }, { label: "Editar" }]}
+        className="mb-6"
+      />
       <ProductoForm product={product} categories={categories} subcategories={subcategories} />
-    </div>
+    </PageContainer>
   )
 }

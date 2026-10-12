@@ -1,10 +1,13 @@
 "use client"
 
 import { createContext, useContext, type ReactNode } from "react"
+import type { Plan } from "@/config/planes"
 
 export interface PanelInfo {
   storeName: string
   storeSlug: string
+  /** Plan elegido en el registro (stores.plan_intent). */
+  planId: Plan["id"]
   userName: string
   userEmail: string
 }

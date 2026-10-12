@@ -3,22 +3,17 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Pencil, Plus } from "lucide-react"
+import { toast } from "sonner"
 import type { Subcategory, Category } from "@/lib/types-catalog"
 import { deleteSubcategory } from "./actions"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Pencil, Trash2, Plus } from "lucide-react"
-import { toast } from "sonner"
+import { ConfirmDelete } from "@/components/panel/confirm-delete"
+import { DataTable, Td, Th, Tr } from "@/components/panel/data-table"
+import { EmptyState } from "@/components/panel/empty-state"
+import { PageContainer, PageHeader } from "@/components/panel/page-header"
+import { StatusBadge } from "@/components/panel/status-badge"
+import { SECCION_ICONOS } from "@/components/panel/nav"
 
 interface Props {
   subcategories: Subcategory[]
@@ -30,7 +25,7 @@ export function SubcategoriesPageClient({ subcategories, categories }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null)
 
   function getCategoryName(categoryId: string) {
-    return categories.find((c) => c.id === categoryId)?.name ?? categoryId
+    return categories.find((c) => c.id === categoryId)?.name ?? "—"
   }
 
   async function handleDelete(id: string) {
@@ -45,105 +40,90 @@ export function SubcategoriesPageClient({ subcategories, categories }: Props) {
     }
   }
 
-  return (
-    <div className="p-8">
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Subcategorías</h1>
-          <p className="text-sm text-muted-foreground mt-1">{subcategories.length} subcategoría{subcategories.length !== 1 ? "s" : ""}</p>
-        </div>
-        <Button asChild>
-          <Link href="/panel/subcategorias/nueva">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Subcategoría
-          </Link>
-        </Button>
-      </div>
+  const nueva = (
+    <Button asChild>
+      <Link href="/panel/subcategorias/nueva">
+        <Plus /> Nueva subcategoría
+      </Link>
+    </Button>
+  )
 
-      {/* Table */}
-      {subcategories.length === 0 ? (
-        <div className="rounded-xl border bg-card p-12 text-center">
-          <p className="text-muted-foreground mb-4">No hay subcategorías aún.</p>
-          <Button asChild>
-            <Link href="/panel/subcategorias/nueva">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear primera subcategoría
-            </Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Subcategorías"
+        icon={SECCION_ICONOS.subcategorias}
+        description={
+          subcategories.length > 0
+            ? `${subcategories.length} subcategoría${subcategories.length !== 1 ? "s" : ""}. Ordenan los productos dentro de cada categoría.`
+            : "Ordenan los productos dentro de cada categoría."
+        }
+        actions={subcategories.length > 0 && nueva}
+      />
+
+      <div className="mt-6">
+        {subcategories.length === 0 ? (
+          <EmptyState
+            illustration="categorias"
+            title="Todavía no tenés subcategorías"
+            description="Son opcionales. Sirven para ordenar mejor, por ejemplo Cuadros y Espejos dentro de Decoración."
+            actions={nueva}
+          />
+        ) : (
+          <DataTable>
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nombre</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Categoría</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Slug</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Orden</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Estado</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Acciones</th>
+              <tr>
+                <Th>Subcategoría</Th>
+                <Th className="hidden sm:table-cell">Categoría</Th>
+                <Th className="hidden md:table-cell">Orden</Th>
+                <Th>Estado</Th>
+                <Th className="text-right">
+                  <span className="sr-only">Acciones</span>
+                </Th>
               </tr>
             </thead>
             <tbody>
               {subcategories.map((sub) => (
-                <tr key={sub.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">{sub.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{getCategoryName(sub.category_id)}</td>
-                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{sub.slug}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{sub.sort_order}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        sub.is_active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {sub.is_active ? "Activa" : "Inactiva"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/panel/subcategorias/${sub.id}`}>
-                          <Pencil className="h-4 w-4" />
+                <Tr key={sub.id}>
+                  <Td>
+                    <Link href={`/panel/subcategorias/${sub.id}`} className="block min-w-0">
+                      <span className="block truncate font-semibold hover:underline">{sub.name}</span>
+                      <span className="block truncate text-xs text-texto-secundario">{sub.slug}</span>
+                    </Link>
+                  </Td>
+                  <Td className="hidden text-texto-secundario sm:table-cell">
+                    {sub.categories?.name ?? getCategoryName(sub.category_id)}
+                  </Td>
+                  <Td className="hidden text-texto-secundario md:table-cell">{sub.sort_order}</Td>
+                  <Td>
+                    <StatusBadge tone={sub.is_active ? "exito" : "neutro"}>{sub.is_active ? "Activa" : "Inactiva"}</StatusBadge>
+                  </Td>
+                  <Td>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button variant="ghost" size="icon-sm" asChild>
+                        <Link href={`/panel/subcategorias/${sub.id}`} aria-label="Editar" title="Editar">
+                          <Pencil strokeWidth={1.5} />
                         </Link>
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar subcategoría?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción eliminará la subcategoría <strong>{sub.name}</strong> permanentemente.
-                              Los productos asociados quedarán sin subcategoría.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(sub.id)}
-                              disabled={deleting === sub.id}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {deleting === sub.id ? "Eliminando..." : "Eliminar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <ConfirmDelete
+                        title="¿Eliminar esta subcategoría?"
+                        description={
+                          <>
+                            Se borra <strong className="text-tinta">{sub.name}</strong>. Sus productos quedan sin subcategoría, en
+                            la misma categoría. No se puede deshacer.
+                          </>
+                        }
+                        onConfirm={() => handleDelete(sub.id)}
+                        pending={deleting === sub.id}
+                      />
                     </div>
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               ))}
             </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+          </DataTable>
+        )}
+      </div>
+    </PageContainer>
   )
 }

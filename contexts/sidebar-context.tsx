@@ -1,14 +1,11 @@
 "use client"
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  type ReactNode,
-} from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 
+/**
+ * Sidebar del panel en escritorio: expandido (240px) o riel de íconos (64px).
+ * En mobile el menú es un Sheet (ver components/panel/panel-shell.tsx).
+ */
 interface SidebarContextType {
   isCollapsed: boolean
   setIsCollapsed: (collapsed: boolean) => void
@@ -18,65 +15,35 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 const STORAGE_KEY = "sidebar-collapsed"
-const MD_BREAKPOINT = 768
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsedState] = useState(false)
-  const [isHydrated, setIsHydrated] = useState(false)
 
-  // Load from localStorage on mount and handle initial screen size
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    const isSmallScreen = window.innerWidth < MD_BREAKPOINT
-
-    if (isSmallScreen) {
-      // Always collapse on small screens initially
-      setIsCollapsedState(true)
-    } else if (stored !== null) {
-      // Use stored preference on larger screens
-      setIsCollapsedState(JSON.parse(stored))
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored !== null) setIsCollapsedState(JSON.parse(stored) === true)
+    } catch {
+      // Sin localStorage (modo privado, etc.): queda expandido.
     }
-
-    setIsHydrated(true)
-  }, [])
-
-  // Auto-collapse on small screens when resizing
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < MD_BREAKPOINT) {
-        setIsCollapsedState(true)
-      }
-    }
-
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   const setIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsedState(collapsed)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed))
+    } catch {}
   }, [])
 
-  const toggleSidebar = useCallback(() => {
-    setIsCollapsed(!isCollapsed)
-  }, [isCollapsed, setIsCollapsed])
-
-  // Use default state until hydrated to prevent mismatch
-  const value = {
-    isCollapsed: isHydrated ? isCollapsed : false,
-    setIsCollapsed,
-    toggleSidebar,
-  }
+  const toggleSidebar = useCallback(() => setIsCollapsed(!isCollapsed), [isCollapsed, setIsCollapsed])
 
   return (
-    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
+    <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed, toggleSidebar }}>{children}</SidebarContext.Provider>
   )
 }
 
 export function useSidebar() {
   const context = useContext(SidebarContext)
-  if (context === undefined) {
-    throw new Error("useSidebar must be used within a SidebarProvider")
-  }
+  if (context === undefined) throw new Error("useSidebar must be used within a SidebarProvider")
   return context
 }

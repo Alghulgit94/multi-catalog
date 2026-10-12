@@ -1,5 +1,6 @@
 import { requireStoreContext } from "@/lib/auth/session"
 import { getCategories } from "@/lib/data/panel"
+import { PageContainer, PageHeader } from "@/components/panel/page-header"
 import { SubcategoryForm } from "../subcategory-form"
 
 export default async function NuevaSubcategoryPage() {
@@ -8,12 +9,14 @@ export default async function NuevaSubcategoryPage() {
   const categories = await getCategories()
 
   return (
-    <div>
-      <div className="px-8 pt-8 pb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Nueva Subcategoría</h1>
-        <p className="text-sm text-muted-foreground mt-1">Crear una nueva subcategoría de productos</p>
-      </div>
+    <PageContainer size="form">
+      <PageHeader
+        title="Nueva subcategoría"
+        back="/panel/subcategorias"
+        breadcrumb={[{ label: "Subcategorías", href: "/panel/subcategorias" }, { label: "Nueva subcategoría" }]}
+        className="mb-6"
+      />
       <SubcategoryForm categories={categories} />
-    </div>
+    </PageContainer>
   )
 }

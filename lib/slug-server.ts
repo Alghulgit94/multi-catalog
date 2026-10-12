@@ -69,7 +69,7 @@ export function describeWriteError(
 ): string {
   const code = dbErrorCode(err)
   if (code === "unique") {
-    return `Ya existe ${entity} con el slug «${slug}». Probá con otro.`
+    return `Ya tenés ${entity} con el link «${slug}». Probá con otro nombre.`
   }
   if (code === "foreign_key") {
     return "La categoría o subcategoría elegida no es válida."

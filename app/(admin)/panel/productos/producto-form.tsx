@@ -7,12 +7,15 @@ import { toAssetVersion, MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-c
 import { buildImageUrl } from "@/lib/media-urls"
 import { createProduct, updateProduct, updateProductImages, uploadProductImage } from "./actions"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { useSidebar } from "@/contexts/sidebar-context"
+import { Dropzone } from "@/components/panel/dropzone"
+import { CheckField, Field, FormSection } from "@/components/panel/form-section"
+import { UnsavedChangesBar, useDirtyForm } from "@/components/panel/unsaved-changes-bar"
+
+const SIN_SUBCATEGORIA = "__ninguna__"
 
 interface Props {
   product?: Product
@@ -29,9 +32,15 @@ type GalleryItem =
   | { status: "uploaded"; publicId: string; preview: string }
   | { status: "pending";  file: File;       preview: string }
 
-export function ProductoForm({ product, categories, subcategories }: Props) {
+/** "Descartar" remonta el formulario con los valores originales. */
+export function ProductoForm(props: Props) {
+  const [resetKey, setResetKey] = useState(0)
+  return <ProductoFormInner key={resetKey} {...props} onDiscard={() => setResetKey((k) => k + 1)} />
+}
+
+function ProductoFormInner({ product, categories, subcategories, onDiscard }: Props & { onDiscard: () => void }) {
   const router = useRouter()
-  const { isCollapsed } = useSidebar()
+  const formRef = useRef<HTMLFormElement>(null)
   const [loading, setLoading] = useState(false)
   const [slug, setSlug] = useState(product?.slug || "")
   const [slugEdited, setSlugEdited] = useState(!!product?.slug)
@@ -64,6 +73,14 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
   )
   const galleryFileRef = useRef<HTMLInputElement>(null)
 
+  const { dirty, check, markClean } = useDirtyForm(formRef, {
+    slug,
+    selectedCategoryId,
+    selectedSubcategoryId,
+    cover: cover.status === "empty" ? null : cover.preview,
+    gallery: galleryItems.map((i) => i.preview),
+  })
+
   // Track object URLs for cleanup
   const objectUrlsRef = useRef<string[]>([])
 
@@ -94,15 +111,9 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     setCover({ status: "pending", file, preview })
   }
 
-  function onCoverDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file) onCoverSelected(file)
-  }
-
-  function onCoverFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) onCoverSelected(file)
+  function removeCover() {
+    if (cover.status === "pending") URL.revokeObjectURL(cover.preview)
+    setCover({ status: "empty" })
   }
 
   // ─── Gallery ─────────────────────────────────────────────────────────────
@@ -114,15 +125,13 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     setGalleryItems((prev) => [...prev, { status: "pending", file, preview }])
   }
 
-  function onGalleryFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    e.target.value = "" // Reset so the same files can be re-selected
+  function onGalleryFiles(files: File[]) {
     if (files.length === 0) return
 
     const availableSlots = MAX_GALLERY - galleryItems.length
     const toAdd = files.slice(0, availableSlots)
     if (files.length > toAdd.length) {
-      toast.error(`Solo se agregaron ${toAdd.length} imágenes (máximo ${MAX_GALLERY} en total)`)
+      toast.error(`Se agregaron ${toAdd.length} fotos: la galería admite hasta ${MAX_GALLERY}.`)
     }
     toAdd.forEach(onGalleryFileSelected)
   }
@@ -143,7 +152,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     setLoading(true)
 
     if (galleryItems.length > MAX_GALLERY) {
-      toast.error(`Máximo ${MAX_GALLERY} imágenes en la galería`)
+      toast.error(`La galería admite hasta ${MAX_GALLERY} fotos`)
       setLoading(false)
       return
     }
@@ -191,7 +200,7 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
 
     if (saved.error || !saved.id) {
       setLoading(false)
-      toast.error(saved.error || "Error al guardar el producto")
+      toast.error(saved.error || "No pudimos guardar el producto. Probá de nuevo.")
       return
     }
 
@@ -263,336 +272,238 @@ export function ProductoForm({ product, categories, subcategories }: Props) {
     const savedLabel = product ? "Producto actualizado" : "Producto creado"
     if (failures.length > 0) {
       // El producto ya está guardado: avisar sin bloquear, se reintenta editando.
-      toast.error(`${savedLabel}, pero fallaron imágenes: ${failures.join(", ")}. Editá el producto para reintentar.`)
+      toast.error(`${savedLabel}, pero no se subieron algunas fotos: ${failures.join(", ")}. Editá el producto para reintentar.`)
     } else if (finalSlug !== slug) {
-      toast.success(`${savedLabel} con el slug «${finalSlug}»`)
+      toast.success(`${savedLabel}. Su link quedó como /${finalSlug}`)
     } else {
       toast.success(savedLabel)
     }
+    markClean()
     router.push("/panel/productos")
   }
 
-  const slots = Array.from({ length: MAX_GALLERY })
+  const subcategoriasDisponibles = subcategories.filter((s) => s.category_id === selectedCategoryId && s.is_active)
 
   return (
-    <form onSubmit={handleSubmit} className="pb-28">
-      <div className="px-8 grid grid-cols-12 gap-8 mt-2">
+    <form ref={formRef} onSubmit={handleSubmit} onChange={check} onInput={check} className="relative">
+      <UnsavedChangesBar
+        visible={dirty}
+        saving={loading}
+        message={product ? "Cambios sin guardar" : "Producto sin guardar"}
+        saveLabel={product ? "Guardar" : "Guardar producto"}
+        onDiscard={onDiscard}
+      />
 
-        {/* ── Columna izquierda 8/12 ── */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
-
-          {/* Card: Información Principal */}
-          <div className="rounded-xl border bg-white shadow-sm">
-            <div className="px-6 pt-6 pb-4 border-b flex items-center gap-2">
-              <span className="material-symbols-outlined text-muted-foreground text-[20px]">info</span>
-              <h2 className="font-semibold text-base">Información Principal</h2>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Nombre + Slug */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nombre del Producto *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    required
-                    defaultValue={product?.name}
-                    onChange={handleNameChange}
-                    placeholder="Sofá Minimalista Velvet"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="slug">Slug</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-muted-foreground text-[16px]">link</span>
-                    <Input
-                      id="slug"
-                      name="slug"
-                      required
-                      value={slug}
-                      onChange={handleSlugChange}
-                      placeholder="sofa-minimalista-velvet"
-                      className="pl-9 font-mono text-sm italic text-muted-foreground"
-                      readOnly={!!product?.slug && !slugEdited}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Categoría */}
-              <div className="space-y-1.5">
-                <Label htmlFor="category_id">Categoría *</Label>
-                <select
-                  id="category_id"
-                  name="category_id"
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* ── Columna principal ── */}
+        <div className="flex min-w-0 flex-col gap-6">
+          <FormSection title="Información">
+            <Field label="Nombre" htmlFor="name">
+              <Input
+                id="name"
+                name="name"
+                required
+                defaultValue={product?.name}
+                onChange={handleNameChange}
+                placeholder="Ej.: Sillón de tres cuerpos"
+              />
+            </Field>
+            <Field
+              label="Link del producto"
+              htmlFor="slug"
+              hint="Se arma solo con el nombre. Solo letras, números y guiones."
+            >
+              <div className="flex h-10 items-center rounded-[10px] border border-linea bg-fondo-alterno/60 focus-within:border-primario">
+                <span className="pl-3 text-sm text-texto-secundario">/producto/</span>
+                <input
+                  id="slug"
+                  name="slug"
                   required
-                  value={selectedCategoryId}
-                  onChange={(e) => {
-                    setSelectedCategoryId(e.target.value)
-                    setSelectedSubcategoryId("")
-                  }}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Subcategoría */}
-              <div className="space-y-1.5">
-                <Label htmlFor="subcategory_id">Subcategoría <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                <select
-                  id="subcategory_id"
-                  name="subcategory_id"
-                  value={selectedSubcategoryId}
-                  onChange={(e) => setSelectedSubcategoryId(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Sin subcategoría</option>
-                  {subcategories
-                    .filter((s) => s.category_id === selectedCategoryId && s.is_active)
-                    .map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Descripción corta */}
-              <div className="space-y-1.5">
-                <Label htmlFor="short_description">Descripción Corta *</Label>
-                <Textarea
-                  id="short_description"
-                  name="short_description"
-                  required
-                  defaultValue={product?.short_description || ""}
-                  rows={2}
-                  placeholder="Texto breve para las tarjetas del catálogo"
+                  value={slug}
+                  onChange={handleSlugChange}
+                  placeholder="sillon-tres-cuerpos"
+                  className="h-full min-w-0 flex-1 bg-transparent pr-3 text-[15px] text-tinta outline-none"
+                  readOnly={!!product?.slug && !slugEdited}
                 />
               </div>
+            </Field>
+            <Field label="Descripción corta" htmlFor="short_description" hint="Se ve en las tarjetas del catálogo.">
+              <Textarea
+                id="short_description"
+                name="short_description"
+                required
+                defaultValue={product?.short_description || ""}
+                rows={2}
+                placeholder="Una línea que cuente qué es"
+              />
+            </Field>
+            <Field label="Descripción completa" htmlFor="description" hint="Se ve en la página del producto.">
+              <Textarea
+                id="description"
+                name="description"
+                required
+                defaultValue={product?.description || ""}
+                rows={6}
+                placeholder="Medidas, materiales, colores y todo lo que te suelen consultar"
+              />
+            </Field>
+          </FormSection>
 
-              {/* Descripción completa */}
-              <div className="space-y-1.5">
-                <Label htmlFor="description">Descripción Completa *</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  required
-                  defaultValue={product?.description || ""}
-                  rows={6}
-                  placeholder="Descripción detallada para la página del producto"
+          <FormSection
+            title="Fotos"
+            description={`La portada es la que se ve primero. Podés sumar hasta ${MAX_GALLERY} fotos más.`}
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[200px_minmax(0,1fr)]">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-semibold text-tinta">Portada</p>
+                <Dropzone
+                  preview={cover.status === "empty" ? null : cover.preview}
+                  onFiles={([file]) => onCoverSelected(file)}
+                  onRemove={removeCover}
+                  disabled={loading}
+                  label="Subí la portada"
+                  alt="Portada"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Card: Media & Galería */}
-          <div className="rounded-xl border bg-white shadow-sm">
-            <div className="px-6 pt-6 pb-4 border-b flex items-center gap-2">
-              <span className="material-symbols-outlined text-muted-foreground text-[20px]">image</span>
-              <h2 className="font-semibold text-base">Media &amp; Galería</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-12 gap-4">
-                {/* Imagen de portada — col 4 */}
-                <div className="col-span-4 space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Imagen de portada</p>
-                  {cover.status !== "empty" ? (
-                    <div className="relative aspect-square rounded-xl overflow-hidden border shadow-sm group">
-                      <img
-                        src={cover.preview}
-                        alt="Portada"
-                        className="h-full w-full object-cover"
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-semibold text-tinta">
+                  Galería{" "}
+                  <span className="font-normal text-texto-secundario">
+                    ({galleryItems.length} de {MAX_GALLERY})
+                  </span>
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: MAX_GALLERY }).map((_, i) => {
+                    const item = galleryItems[i]
+                    const esSiguiente = i === galleryItems.length
+                    return item ? (
+                      <Dropzone
+                        key={i}
+                        compact
+                        preview={item.preview}
+                        onFiles={() => {}}
+                        onRemove={() => removeGalleryItem(i)}
+                        disabled={loading}
+                        alt={`Foto ${i + 1}`}
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (cover.status === "pending") URL.revokeObjectURL(cover.preview)
-                            setCover({ status: "empty" })
-                          }}
-                          className="rounded-full bg-destructive text-white p-2 shadow"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      onDrop={onCoverDrop}
-                      onDragOver={(e) => e.preventDefault()}
-                      onClick={() => coverFileRef.current?.click()}
-                      className="aspect-square rounded-xl border-2 border-dashed border-border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-2"
-                    >
-                      <>
-                        <span className="material-symbols-outlined text-muted-foreground text-[32px]">add_photo_alternate</span>
-                        <p className="text-xs text-muted-foreground text-center px-3">Arrastra o haz clic</p>
-                      </>
-                    </div>
-                  )}
-                  <input
-                    ref={coverFileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={onCoverFileChange}
-                  />
-                </div>
-
-                {/* Galería — col 8 */}
-                <div className="col-span-8 space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Galería de imágenes (Máx {MAX_GALLERY})</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {slots.map((_, i) => {
-                      const item = galleryItems[i]
-                      return (
-                        <div key={i} className="relative aspect-square">
-                          {item ? (
-                            <div className="relative h-full w-full group">
-                              <img
-                                src={item.preview}
-                                alt={`Galería ${i + 1}`}
-                                className="h-full w-full object-cover rounded-lg border shadow-sm"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => removeGalleryItem(i)}
-                                  className="rounded-full bg-destructive text-white p-1 shadow"
-                                >
-                                  <span className="material-symbols-outlined text-[14px]">delete</span>
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={galleryItems.length >= MAX_GALLERY || loading}
-                              onClick={() => galleryFileRef.current?.click()}
-                              className="h-full w-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 transition-colors text-muted-foreground"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">add</span>
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <input
-                    ref={galleryFileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={onGalleryFileChange}
-                  />
+                    ) : (
+                      <Dropzone
+                        key={i}
+                        compact
+                        multiple
+                        onFiles={onGalleryFiles}
+                        disabled={loading || !esSiguiente}
+                        label="Agregar fotos a la galería"
+                        className={esSiguiente ? undefined : "opacity-40"}
+                      />
+                    )
+                  })}
                 </div>
               </div>
             </div>
-          </div>
+          </FormSection>
+
+          <FormSection title="Precio">
+            <Field label="Precio" htmlFor="price" optional hint="Sin precio, tus clientes lo consultan por WhatsApp.">
+              <div className="flex h-10 max-w-[240px] items-center rounded-[10px] border border-linea bg-white focus-within:border-primario">
+                <span className="pl-3 text-sm font-semibold text-texto-secundario">Gs.</span>
+                <input
+                  id="price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  inputMode="numeric"
+                  defaultValue={product?.price ?? ""}
+                  placeholder="0"
+                  className="h-full min-w-0 flex-1 bg-transparent px-2 text-[15px] text-tinta outline-none"
+                />
+              </div>
+            </Field>
+            <CheckField
+              name="show_price"
+              label="Mostrar el precio en el catálogo"
+              defaultChecked={product?.show_price ?? false}
+            />
+          </FormSection>
         </div>
 
-        {/* ── Columna derecha 4/12 ── */}
-        <div className="col-span-12 lg:col-span-4 space-y-6">
+        {/* ── Columna lateral ── */}
+        <div className="flex flex-col gap-6">
+          <FormSection title="Estado">
+            <CheckField
+              name="is_active"
+              label="Activo"
+              description="Los inactivos no aparecen en tu catálogo."
+              defaultChecked={product?.is_active ?? true}
+            />
+            <CheckField
+              name="is_visible"
+              label="Visible"
+              description="Ocultalo sin desactivarlo."
+              defaultChecked={product?.is_visible ?? true}
+            />
+            <CheckField
+              name="featured"
+              label="Destacado"
+              description="Aparece primero en el inicio de tu catálogo."
+              defaultChecked={product?.featured ?? false}
+            />
+          </FormSection>
 
-          {/* Card: Precio y Visibilidad */}
-          <div className="rounded-xl border bg-white shadow-sm">
-            <div className="px-6 pt-6 pb-4 border-b flex items-center gap-2">
-              <span className="material-symbols-outlined text-muted-foreground text-[20px]">payments</span>
-              <h2 className="font-semibold text-base">Precio y Visibilidad</h2>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Precio */}
-              <div className="space-y-1.5">
-                <Label htmlFor="price">Precio (Gs.)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">₲</span>
-                  <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    min="0"
-                    step="1000"
-                    defaultValue={product?.price ?? ""}
-                    placeholder="0"
-                    className="pl-7"
-                  />
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className="space-y-1.5">
-                <Label htmlFor="tags">Tags / Etiquetas</Label>
-                <Input
-                  id="tags"
-                  name="tags"
-                  defaultValue={(product?.tags || []).join(", ")}
-                  placeholder="sofa, nordico, tela"
-                />
-                <p className="text-xs text-muted-foreground">Separados por coma</p>
-              </div>
-
-              <hr className="border-border" />
-
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                {[
-                  { name: "show_price", label: "Mostrar precio", default: product?.show_price ?? false },
-                  { name: "featured", label: "Destacado", default: product?.featured ?? false },
-                  { name: "is_active", label: "Activo", default: product?.is_active ?? true },
-                  { name: "is_visible", label: "Visible", default: product?.is_visible ?? true },
-                ].map((field) => (
-                  <label key={field.name} className="flex items-center gap-3 cursor-pointer select-none group">
-                    <div className="relative flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        name={field.name}
-                        value="true"
-                        defaultChecked={field.default}
-                        className="peer h-5 w-5 appearance-none rounded border border-input bg-white checked:bg-primary checked:border-primary transition-colors cursor-pointer"
-                      />
-                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 text-white">
-                        <span className="material-symbols-outlined text-[14px] font-bold">check</span>
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium group-hover:text-foreground/80 transition-colors">{field.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Box: Consejo Pro */}
-          <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-[20px]">lightbulb</span>
-              <span className="text-sm font-semibold">Consejo Pro</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Usa un slug descriptivo y único para mejorar el SEO. Agrega imágenes de alta calidad y una descripción completa para aumentar las conversiones.
-            </p>
-          </div>
+          <FormSection title="Organización">
+            <Field label="Categoría" htmlFor="category_id">
+              <Select
+                name="category_id"
+                required
+                value={selectedCategoryId || undefined}
+                onValueChange={(v) => {
+                  setSelectedCategoryId(v)
+                  setSelectedSubcategoryId("")
+                }}
+              >
+                <SelectTrigger id="category_id" className="w-full">
+                  <SelectValue placeholder="Elegí una categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Subcategoría" htmlFor="subcategory_id" optional>
+              <Select
+                value={selectedSubcategoryId || SIN_SUBCATEGORIA}
+                onValueChange={(v) => setSelectedSubcategoryId(v === SIN_SUBCATEGORIA ? "" : v)}
+                disabled={subcategoriasDisponibles.length === 0}
+              >
+                <SelectTrigger id="subcategory_id" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SIN_SUBCATEGORIA}>Sin subcategoría</SelectItem>
+                  {subcategoriasDisponibles.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Etiquetas" htmlFor="tags" optional hint="Separalas con comas. Ayudan a encontrar el producto.">
+              <Input
+                id="tags"
+                name="tags"
+                defaultValue={(product?.tags || []).join(", ")}
+                placeholder="living, tela, gris"
+              />
+            </Field>
+          </FormSection>
         </div>
       </div>
-
-      {/* ── Footer fijo ── */}
-      <footer
-        className="fixed bottom-0 right-0 h-20 bg-white border-t flex items-center justify-end px-8 gap-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] transition-[left]"
-        style={{ left: isCollapsed ? "4rem" : "16rem" }}
-      >
-        <Button type="button" variant="ghost" onClick={() => router.push("/panel/productos")}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={loading}>
-          <span className="material-symbols-outlined text-sm mr-2">save</span>
-          {loading ? "Guardando..." : product ? "Actualizar Producto" : "Crear Producto"}
-        </Button>
-      </footer>
     </form>
   )
 }

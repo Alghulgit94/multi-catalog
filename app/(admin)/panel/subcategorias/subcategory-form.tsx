@@ -1,33 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Plus } from "lucide-react"
+import { toast } from "sonner"
 import type { Subcategory, Category } from "@/lib/types-catalog"
+import { slugify, sanitizeSlugInput } from "@/lib/slug"
 import { createSubcategory, updateSubcategory } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import { slugify, sanitizeSlugInput } from "@/lib/slug"
-import { useSidebar } from "@/contexts/sidebar-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EmptyState } from "@/components/panel/empty-state"
+import { CheckField, Field, FormSection } from "@/components/panel/form-section"
+import { UnsavedChangesBar, useDirtyForm } from "@/components/panel/unsaved-changes-bar"
 
 interface Props {
   subcategory?: Subcategory
   categories: Category[]
 }
 
-export function SubcategoryForm({ subcategory, categories }: Props) {
+/** "Descartar" remonta el formulario con los valores originales. */
+export function SubcategoryForm(props: Props) {
+  const [resetKey, setResetKey] = useState(0)
+  return <SubcategoryFormInner key={resetKey} {...props} onDiscard={() => setResetKey((k) => k + 1)} />
+}
+
+function SubcategoryFormInner({ subcategory, categories, onDiscard }: Props & { onDiscard: () => void }) {
   const router = useRouter()
-  const { isCollapsed } = useSidebar()
+  const formRef = useRef<HTMLFormElement>(null)
   const [loading, setLoading] = useState(false)
   const [slug, setSlug] = useState(subcategory?.slug || "")
   const [slugEdited, setSlugEdited] = useState(!!subcategory?.slug)
+  const [categoryId, setCategoryId] = useState(subcategory?.category_id || "")
+
+  const { dirty, check, markClean } = useDirtyForm(formRef, { slug, categoryId })
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!slugEdited) {
-      setSlug(slugify(e.target.value))
-    }
+    if (!slugEdited) setSlug(slugify(e.target.value))
   }
 
   function handleSlugChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -37,17 +47,18 @@ export function SubcategoryForm({ subcategory, categories }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!categoryId) {
+      toast.error("Elegí la categoría a la que pertenece")
+      return
+    }
     setLoading(true)
     const form = e.currentTarget
     const fd = new FormData(form)
     fd.set("slug", slug)
+    fd.set("category_id", categoryId)
+    fd.set("is_active", form.querySelector<HTMLInputElement>('[name="is_active"]')?.checked ? "true" : "false")
 
-    if (!fd.has("is_active")) fd.set("is_active", "false")
-    if (form.querySelector<HTMLInputElement>('[name="is_active"]')?.checked) fd.set("is_active", "true")
-
-    const result = subcategory
-      ? await updateSubcategory(subcategory.id, fd)
-      : await createSubcategory(fd)
+    const result = subcategory ? await updateSubcategory(subcategory.id, fd) : await createSubcategory(fd)
 
     setLoading(false)
     if (result.error) {
@@ -55,172 +66,96 @@ export function SubcategoryForm({ subcategory, categories }: Props) {
     } else {
       const finalSlug = result.slug || slug
       if (finalSlug !== slug) setSlug(finalSlug)
-      const label = subcategory ? "Subcategoría actualizada" : "Subcategoría creada"
-      toast.success(finalSlug !== slug ? `${label} con el slug «${finalSlug}»` : label)
+      const label = subcategory ? "Subcategoría guardada" : "Subcategoría creada"
+      toast.success(finalSlug !== slug ? `${label}. Su link quedó como ${finalSlug}` : label)
+      markClean()
       router.push("/panel/subcategorias")
     }
   }
 
   if (categories.length === 0) {
     return (
-      <div className="px-8 mt-2">
-        <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-          <span className="material-symbols-outlined text-muted-foreground text-[64px]">category</span>
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold">No hay categorías creadas</h2>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Debés crear al menos una categoría antes de poder agregar una subcategoría.
-            </p>
-          </div>
-          <div className="flex gap-3 mt-2">
+      <EmptyState
+        illustration="categorias"
+        title="Primero creá una categoría"
+        description="Las subcategorías ordenan productos dentro de una categoría. Por ejemplo, Cuadros dentro de Decoración."
+        actions={
+          <>
             <Button asChild>
-              <Link href="/panel/carga/categoria">
-                <span className="material-symbols-outlined text-sm mr-2">add</span>
-                Crear categoría
+              <Link href="/panel/categorias/nueva">
+                <Plus /> Crear categoría
               </Link>
             </Button>
-            <Button variant="ghost" asChild>
-              <Link href="/panel/subcategorias">Cancelar</Link>
+            <Button variant="outline" asChild>
+              <Link href="/panel/subcategorias">Volver</Link>
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="pb-28">
-      <div className="px-8 mt-2">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <form ref={formRef} onSubmit={handleSubmit} onChange={check} onInput={check} className="relative">
+      <UnsavedChangesBar
+        visible={dirty}
+        saving={loading}
+        message={subcategory ? "Cambios sin guardar" : "Subcategoría sin guardar"}
+        saveLabel={subcategory ? "Guardar" : "Guardar subcategoría"}
+        onDiscard={onDiscard}
+      />
 
-          {/* ── Columna 2/3 ── */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <FormSection title="Información">
+          <Field label="Categoría" htmlFor="category_id" hint="La categoría a la que pertenece.">
+            <Select value={categoryId || undefined} onValueChange={setCategoryId}>
+              <SelectTrigger id="category_id" className="w-full">
+                <SelectValue placeholder="Elegí una categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Nombre" htmlFor="name">
+            <Input
+              id="name"
+              name="name"
+              required
+              defaultValue={subcategory?.name}
+              onChange={handleNameChange}
+              placeholder="Ej.: Cuadros"
+            />
+          </Field>
+          <Field label="Nombre en el link" htmlFor="slug" hint="Se arma solo con el nombre. Tiene que ser único.">
+            <Input id="slug" name="slug" required value={slug} onChange={handleSlugChange} placeholder="cuadros" />
+          </Field>
+          <Field label="Orden" htmlFor="sort_order" hint="Las de número menor aparecen primero.">
+            <Input
+              id="sort_order"
+              name="sort_order"
+              type="number"
+              defaultValue={subcategory?.sort_order ?? 0}
+              className="w-32"
+            />
+          </Field>
+        </FormSection>
 
-            {/* Card: Campos principales */}
-            <div className="rounded-xl border bg-white shadow-sm">
-              <div className="px-6 pt-6 pb-4 border-b">
-                <h2 className="font-semibold text-base">Información de la Subcategoría</h2>
-              </div>
-              <div className="p-6 space-y-6">
-
-                {/* Categoría padre */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="category_id">Categoría *</Label>
-                  <select
-                    id="category_id"
-                    name="category_id"
-                    required
-                    defaultValue={subcategory?.category_id || ""}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="">Seleccionar categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Nombre */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Nombre de la subcategoría *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    required
-                    defaultValue={subcategory?.name}
-                    onChange={handleNameChange}
-                    placeholder="Ej. CUADROS"
-                  />
-                </div>
-
-                {/* Slug */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="slug">Slug *</Label>
-                  <div className="relative">
-                    <Input
-                      id="slug"
-                      name="slug"
-                      required
-                      value={slug}
-                      onChange={handleSlugChange}
-                      placeholder="cuadros"
-                      className="pr-9 font-mono text-sm"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-muted-foreground text-[16px]">lock</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">El slug se genera automáticamente. Debe ser único.</p>
-                </div>
-
-                {/* Orden */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="sort_order">Orden de visualización</Label>
-                  <Input
-                    id="sort_order"
-                    name="sort_order"
-                    type="number"
-                    defaultValue={subcategory?.sort_order ?? 0}
-                    className="w-40"
-                  />
-                  <p className="text-xs text-muted-foreground">Menor número aparece primero</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card: Estado */}
-            <div className="rounded-xl border bg-white shadow-sm">
-              <div className="px-6 pt-6 pb-4 border-b">
-                <h2 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Estado</h2>
-              </div>
-              <div className="p-6">
-                <label className="flex items-center gap-3 cursor-pointer select-none group">
-                  <div className="relative flex-shrink-0">
-                    <input
-                      type="checkbox"
-                      name="is_active"
-                      value="true"
-                      defaultChecked={subcategory?.is_active ?? true}
-                      className="peer h-5 w-5 appearance-none rounded border border-input bg-white checked:bg-primary checked:border-primary transition-colors cursor-pointer"
-                    />
-                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 text-white">
-                      <span className="material-symbols-outlined text-[14px] font-bold">check</span>
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium group-hover:text-foreground/80 transition-colors">Activa</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Columna 1/3 ── */}
-          <div className="lg:col-span-1">
-            <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[20px]">info</span>
-                <span className="text-sm font-semibold">Acerca de las Subcategorías</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Las subcategorías permiten clasificar productos dentro de una categoría. Por ejemplo, dentro de la categoría Decoración pueden existir subcategorías como Cuadros o Cestas.
-              </p>
-            </div>
-          </div>
+        <div className="flex flex-col gap-6">
+          <FormSection title="Estado">
+            <CheckField
+              name="is_active"
+              label="Activa"
+              description="Las inactivas no aparecen en el catálogo."
+              defaultChecked={subcategory?.is_active ?? true}
+            />
+          </FormSection>
         </div>
       </div>
-
-      {/* ── Footer fijo ── */}
-      <footer
-        className="fixed bottom-0 right-0 h-20 bg-white border-t flex items-center justify-end px-8 gap-4 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] transition-[left]"
-        style={{ left: isCollapsed ? "4rem" : "16rem" }}
-      >
-        <Button type="button" variant="ghost" onClick={() => router.push("/panel/subcategorias")}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={loading}>
-          <span className="material-symbols-outlined text-sm mr-2">save</span>
-          {loading ? "Guardando..." : subcategory ? "Actualizar Subcategoría" : "Crear Subcategoría"}
-        </Button>
-      </footer>
     </form>
   )
 }

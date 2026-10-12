@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { LayoutWrapper } from "@/components/layout-wrapper"
+import { PanelShell } from "@/components/panel/panel-shell"
+import { PLANES } from "@/config/planes"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { PanelProvider } from "@/contexts/panel-context"
@@ -28,11 +29,12 @@ export default async function PanelLayout({
           value={{
             storeName: store.name,
             storeSlug: store.slug,
+            planId: PLANES.find((p) => p.id === store.plan_intent)?.id ?? "gratis",
             userName: user.name || user.email,
             userEmail: user.email,
           }}
         >
-          <LayoutWrapper>{children}</LayoutWrapper>
+          <PanelShell>{children}</PanelShell>
         </PanelProvider>
         <Toaster />
       </ThemeProvider>

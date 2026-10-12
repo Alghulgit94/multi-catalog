@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { requireStoreContext } from "@/lib/auth/session"
 import { eq } from "drizzle-orm"
-import { schema } from "@/lib/db"
+import { dbErrorCode, schema } from "@/lib/db"
 import { belongsToStore, destroyAssets, type UploadOutcome, storeAssetFolder, uploadImage } from "@/lib/media"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
 
@@ -33,7 +33,7 @@ export async function createCategory(formData: FormData) {
     const [row] = await db.db.insert(categories).values(db.withStore(body)).returning({ id: categories.id })
     id = row?.id
   } catch (err) {
-    return { error: describeWriteError(err, "una categoría", body.slug, "Error al crear categoría") }
+    return { error: describeWriteError(err, "una categoría", body.slug, "No pudimos crear la categoría. Probá de nuevo.") }
   }
 
   revalidatePath("/panel/categorias")
@@ -49,7 +49,7 @@ export async function updateCategory(id: string, formData: FormData) {
   try {
     await db.db.update(categories).set(db.safe(body)).where(db.where(categories, eq(categories.id, id)))
   } catch (err) {
-    return { error: describeWriteError(err, "una categoría", body.slug, "Error al actualizar categoría") }
+    return { error: describeWriteError(err, "una categoría", body.slug, "No pudimos guardar la categoría. Probá de nuevo.") }
   }
 
   revalidatePath("/panel/categorias")
@@ -73,7 +73,12 @@ export async function deleteCategory(id: string) {
   } catch (err) {
     // FK RESTRICT: la categoría todavía tiene productos.
     console.error("[categorias] no se pudo eliminar", err)
-    return { error: "Error al eliminar categoría" }
+    return {
+      error:
+        dbErrorCode(err) === "foreign_key"
+          ? "No se puede eliminar: la categoría tiene productos. Movelos a otra categoría primero."
+          : "No pudimos eliminar la categoría. Probá de nuevo.",
+    }
   }
 
   // Best-effort: la categoría ya no existe, no reportar un fallo de R2.
@@ -90,7 +95,7 @@ export async function uploadCategoryImage(formData: FormData): Promise<UploadOut
   const slug = formData.get("slug") as string
 
   if (!file || !slug) {
-    return { error: "Archivo y slug son requeridos" }
+    return { error: "Elegí una foto y escribí el nombre antes de subirla" }
   }
 
   return uploadImage(file, storeAssetFolder(store.id, "categories"), slug)

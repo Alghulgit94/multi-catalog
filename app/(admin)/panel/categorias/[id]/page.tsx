@@ -1,6 +1,7 @@
+import { notFound } from "next/navigation"
 import { requireStoreContext } from "@/lib/auth/session"
-import { redirect, notFound } from "next/navigation"
 import { getCategory } from "@/lib/data/panel"
+import { PageContainer, PageHeader } from "@/components/panel/page-header"
 import { CategoriaForm } from "../categoria-form"
 
 interface Props {
@@ -15,12 +16,14 @@ export default async function EditarCategoriaPage({ params }: Props) {
   if (!category) notFound()
 
   return (
-    <div>
-      <div className="px-8 pt-8 pb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Editar Categoría</h1>
-        <p className="text-sm text-muted-foreground mt-1">{category.name}</p>
-      </div>
+    <PageContainer size="form">
+      <PageHeader
+        title={category.name}
+        back="/panel/categorias"
+        breadcrumb={[{ label: "Categorías", href: "/panel/categorias" }, { label: "Editar" }]}
+        className="mb-6"
+      />
       <CategoriaForm category={category} />
-    </div>
+    </PageContainer>
   )
 }
