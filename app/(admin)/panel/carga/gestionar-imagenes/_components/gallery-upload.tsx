@@ -3,9 +3,7 @@
 import { useState, ChangeEvent, useRef } from "react"
 import { Loader2, Plus, X } from "lucide-react"
 import { toast } from "sonner"
-import { uploadProductImage } from "../../../productos/actions"
-import { prepararImagen } from "@/lib/image-prep"
-import type { UploadOutcome } from "@/lib/media"
+import { subirFoto } from "@/lib/upload-client"
 import { MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-catalog"
 
 interface GalleryItem {
@@ -40,15 +38,11 @@ export function GalleryUpload({ galleryItems, productSlug, onUpdate }: GalleryUp
     const baseIndex = galleryItems.length // 0-based: server adds 1 and pads
     setUploadingCount(toUpload.length)
     try {
-      const results = await Promise.all(
-        toUpload.map(async (file, offset): Promise<UploadOutcome> => {
-          try {
-            return await uploadProductImage(await prepararImagen(file), productSlug, "gallery", baseIndex + offset)
-          } catch {
-            return { error: "No pudimos subir una foto. Revisá tu internet y probá de nuevo." }
-          }
-        })
-      )
+      // De a una: con conexión lenta rinde más y no compiten entre sí.
+      const results = []
+      for (const [offset, file] of toUpload.entries()) {
+        results.push(await subirFoto({ file, tipo: "producto-galeria", slug: productSlug, indice: baseIndex + offset }))
+      }
       const newItems: GalleryItem[] = []
       results.forEach((result, offset) => {
         if (!result.success) {

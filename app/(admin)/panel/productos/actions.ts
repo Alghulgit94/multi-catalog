@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { MAX_GALLERY_IMAGES } from "@/lib/types-catalog"
 import { eq } from "drizzle-orm"
-import { belongsToStore, buildUploadParams, destroyAssets, uploadImage, type ImageType, type UploadOutcome } from "@/lib/media"
+import { belongsToStore, destroyAssets } from "@/lib/media"
 import { requireStoreContext } from "@/lib/auth/session"
 import { schema } from "@/lib/db"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
@@ -271,19 +271,4 @@ export async function updateProductImages(
   revalidatePath("/panel/productos")
   revalidatePath("/panel/carga/gestionar-imagenes")
   return { success: true }
-}
-
-export async function uploadProductImage(
-  file: File,
-  productSlug: string,
-  imageType: ImageType,
-  index?: number
-): Promise<UploadOutcome> {
-  const { store } = await requireStoreContext()
-  if (!file || file.size === 0) return { error: "Elegí una foto válida" }
-  if (!productSlug) return { error: "productSlug es obligatorio" }
-  if (imageType !== "cover" && imageType !== "gallery") return { error: "imageType inválido" }
-
-  const { assetFolder, publicId } = buildUploadParams(store.id, productSlug, imageType, index)
-  return uploadImage(file, assetFolder, publicId)
 }

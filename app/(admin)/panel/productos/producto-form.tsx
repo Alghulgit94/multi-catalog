@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation"
 import type { Product, Category, Subcategory } from "@/lib/types-catalog"
 import { toAssetVersion, MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-catalog"
 import { buildImageUrl } from "@/lib/media-urls"
-import { prepararImagen } from "@/lib/image-prep"
-import type { UploadOutcome } from "@/lib/media"
-import { createProduct, updateProduct, updateProductImages, uploadProductImage } from "./actions"
+import { subirFoto } from "@/lib/upload-client"
+import { createProduct, updateProduct, updateProductImages } from "./actions"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -144,79 +143,54 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
 
   // ─── Submit ───────────────────────────────────────────────────────────────
 
-  /**
-   * Achica la foto y la sube. Nunca lanza: si se corta la conexión devuelve
-   * { error }, para que el producto (ya guardado) no quede a medias sin aviso.
-   */
-  async function subirFoto(file: File, productSlug: string, tipo: "cover" | "gallery", index?: number): Promise<UploadOutcome> {
-    try {
-      const liviana = await prepararImagen(file)
-      return await uploadProductImage(liviana, productSlug, tipo, index)
-    } catch {
-      return { error: "se cortó la conexión" }
-    }
-  }
+  // Id del producto ya guardado: el que se edita o el que se creó en este mismo
+  // formulario. Si fallan fotos, el reintento edita ese producto en vez de crear otro.
+  const [savedId, setSavedId] = useState<string | null>(product?.id ?? null)
+  // Fotos que el producto tiene guardadas en la BD (para no perderlas si falla una subida).
+  const [persisted, setPersisted] = useState<{ cover: string | null; gallery: string[] }>({
+    cover: product?.cover_image ?? null,
+    gallery: product?.gallery_images ?? [],
+  })
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const form = e.currentTarget   // capturar ANTES de cualquier await
-    setLoading(true)
+    const form = e.currentTarget // capturar ANTES de cualquier await
 
     if (galleryItems.length > MAX_GALLERY) {
       toast.error(`La galería admite hasta ${MAX_GALLERY} fotos`)
-      setLoading(false)
       return
     }
+    setLoading(true)
 
-    // ── 1. Guardar en la BD PRIMERO ──────────────────────────────────────────
-    // Las imágenes se suben recién después, con el slug ya confirmado por el
-    // servidor. Al revés (como estaba antes) un slug duplicado sobrescribía en
-    // R2 las fotos del producto existente aunque el insert fallara.
-    const hasPendingUploads =
-      cover.status === "pending" || galleryItems.some((i) => i.status === "pending")
-
-    const uploadedCoverId = cover.status === "uploaded" ? cover.publicId : ""
-    const uploadedGalleryIds = galleryItems
-      .filter((i): i is Extract<GalleryItem, { status: "uploaded" }> => i.status === "uploaded")
-      .map((i) => i.publicId)
-
-    // Si hay algo por subir, este primer guardado NO toca las imágenes que el
-    // producto ya tiene: si la subida falla o se cierra la pestaña, no se pierden.
-    // El paso 3 escribe después la lista definitiva, con las altas y las bajas.
-    const initialCoverId = hasPendingUploads ? product?.cover_image ?? "" : uploadedCoverId
-    const initialGalleryIds = hasPendingUploads
-      ? product?.gallery_images ?? []
-      : uploadedGalleryIds
+    // ── 1. Guardar los datos PRIMERO ─────────────────────────────────────────
+    // Las fotos se suben recién después, con el slug ya confirmado por el
+    // servidor (un slug duplicado no debe pisar fotos de otro producto).
+    // Si hay fotos por subir, este guardado no toca las que el producto ya tiene:
+    // si una subida falla, no se pierde nada. El paso 3 escribe la lista final.
+    const pendientes = (cover.status === "pending" ? 1 : 0) + galleryItems.filter((i) => i.status === "pending").length
+    const uploadedCoverId = cover.status === "uploaded" ? cover.publicId : null
+    const uploadedGalleryIds = galleryItems.flatMap((i) => (i.status === "uploaded" ? [i.publicId] : []))
 
     const fd = new FormData(form)
     fd.set("slug", slug)
-    fd.set("cover_image", initialCoverId)
-    fd.set("gallery_images", JSON.stringify(initialGalleryIds))
+    fd.set("cover_image", (pendientes > 0 ? persisted.cover : uploadedCoverId) ?? "")
+    fd.set("gallery_images", JSON.stringify(pendientes > 0 ? persisted.gallery : uploadedGalleryIds))
     fd.set("subcategory_id", selectedSubcategoryId)
+    for (const name of ["show_price", "featured", "is_active", "is_visible"]) {
+      fd.set(name, form.querySelector<HTMLInputElement>(`[name="${name}"]`)?.checked ? "true" : "false")
+    }
 
-    // Fix checkboxes (unchecked = not present in FormData)
-    if (!fd.has("show_price")) fd.set("show_price", "false")
-    if (!fd.has("featured")) fd.set("featured", "false")
-    if (!fd.has("is_active")) fd.set("is_active", "false")
-    if (!fd.has("is_visible")) fd.set("is_visible", "false")
-    // Override with true if checkbox was checked
-    if (form.querySelector<HTMLInputElement>('[name="show_price"]')?.checked) fd.set("show_price", "true")
-    if (form.querySelector<HTMLInputElement>('[name="featured"]')?.checked) fd.set("featured", "true")
-    if (form.querySelector<HTMLInputElement>('[name="is_active"]')?.checked) fd.set("is_active", "true")
-    if (form.querySelector<HTMLInputElement>('[name="is_visible"]')?.checked) fd.set("is_visible", "true")
-
-    const pendientes = (cover.status === "pending" ? 1 : 0) + galleryItems.filter((i) => i.status === "pending").length
-    const aviso = toast.loading(product ? "Guardando cambios…" : "Guardando producto…")
+    const label = product ? "Producto actualizado" : "Producto creado"
+    const aviso = toast.loading(savedId ? "Guardando cambios…" : "Guardando producto…")
 
     let saved: Awaited<ReturnType<typeof createProduct>>
     try {
-      saved = product ? await updateProduct(product.id, fd) : await createProduct(fd)
+      saved = savedId ? await updateProduct(savedId, fd) : await createProduct(fd)
     } catch {
       setLoading(false)
       toast.error("Se cortó la conexión y no se guardó el producto. Revisá tu internet y probá de nuevo.", { id: aviso })
       return
     }
-
     if (saved.error || !saved.id) {
       setLoading(false)
       toast.error(saved.error || "No pudimos guardar el producto. Probá de nuevo.", { id: aviso })
@@ -224,87 +198,87 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
     }
 
     const productId = saved.id
+    setSavedId(productId)
     // El servidor puede haber desambiguado el slug (alfombra-yute → alfombra-yute-2).
     const finalSlug = saved.slug || slug
-    if (finalSlug !== slug) setSlug(finalSlug)
-
-    // ── 2. Subir las imágenes pendientes con el slug definitivo ──────────────
-    // Portada y galería en paralelo, ya achicadas en el navegador.
-    const failures: string[] = []
-    if (pendientes > 0) {
-      toast.loading(pendientes === 1 ? "Subiendo la foto…" : `Subiendo ${pendientes} fotos…`, { id: aviso })
+    if (finalSlug !== slug) {
+      setSlug(finalSlug)
+      setSlugEdited(true)
     }
 
-    let finalCoverPublicId = uploadedCoverId
-    const coverUpload = cover.status === "pending" ? subirFoto(cover.file, finalSlug, "cover") : null
+    // ── 2. Subir las fotos pendientes, de a una ──────────────────────────────
+    // En secuencia: con conexión lenta rinde más que en paralelo y el aviso
+    // puede mostrar el avance. Las que fallan quedan pendientes para reintentar.
+    const failures: string[] = []
+    let n = 0
+    const avance = () => {
+      n++
+      toast.loading(pendientes === 1 ? "Subiendo la foto…" : `Subiendo foto ${n} de ${pendientes}…`, { id: aviso })
+    }
 
-    type GalleryUploadResult =
-      | { ok: true; index: number; item: GalleryItem; publicId: string; url: string }
-      | { ok: false; index: number; error: string }
-
-    const galleryResults: GalleryUploadResult[] = await Promise.all(
-      galleryItems.map((item, i): Promise<GalleryUploadResult> =>
-        item.status === "uploaded"
-          ? Promise.resolve({ ok: true, index: i, item, publicId: item.publicId, url: item.preview })
-          : subirFoto(item.file, finalSlug, "gallery", i).then((result) =>
-              result.error
-                ? { ok: false, index: i, error: result.error }
-                : { ok: true, index: i, item, publicId: result.public_id!, url: result.secure_url! }
-            )
-      )
-    )
-
-    if (coverUpload && cover.status === "pending") {
-      const result = await coverUpload
-      if (result.error) {
-        failures.push(`portada (${result.error})`)
-      } else {
+    let finalCover: CoverState = cover
+    let finalCoverId = uploadedCoverId
+    if (cover.status === "pending") {
+      avance()
+      const r = await subirFoto({ file: cover.file, tipo: "producto-portada", slug: finalSlug })
+      if (r.success) {
         URL.revokeObjectURL(cover.preview)
-        finalCoverPublicId = result.public_id!
-        setCover({ status: "uploaded", publicId: result.public_id!, preview: result.secure_url! })
+        finalCover = { status: "uploaded", publicId: r.public_id, preview: r.secure_url }
+        finalCoverId = r.public_id
+      } else {
+        failures.push(`portada: ${r.error}`)
+        finalCoverId = persisted.cover // se conserva la portada anterior
       }
     }
 
-    galleryResults.forEach((r) => {
-      if (!r.ok) failures.push(`imagen ${r.index + 1} (${r.error})`)
-    })
+    const finalGallery: GalleryItem[] = []
+    for (const [i, item] of galleryItems.entries()) {
+      if (item.status === "uploaded") {
+        finalGallery.push(item)
+        continue
+      }
+      avance()
+      const r = await subirFoto({ file: item.file, tipo: "producto-galeria", slug: finalSlug, indice: i })
+      if (r.success) {
+        URL.revokeObjectURL(item.preview)
+        finalGallery.push({ status: "uploaded", publicId: r.public_id, preview: r.secure_url })
+      } else {
+        failures.push(`foto ${i + 1}: ${r.error}`)
+        finalGallery.push(item) // queda pendiente, con su vista previa
+      }
+    }
+    setCover(finalCover)
+    setGalleryItems(finalGallery)
 
-    // Se persiste lo que sí subió, para no dejar assets huérfanos en R2.
-    const ok = galleryResults
-      .filter((r): r is Extract<GalleryUploadResult, { ok: true }> => r.ok)
-      .sort((a, b) => a.index - b.index)
-
-    ok.filter((r) => r.item.status === "pending").forEach((r) => URL.revokeObjectURL(r.item.preview))
-
-    const finalGalleryIds = ok.map((r) => r.publicId)
-    setGalleryItems(
-      ok.map((r): GalleryItem => ({ status: "uploaded", publicId: r.publicId, preview: r.url }))
-    )
-
-    // ── 3. Persistir los public_id definitivos ───────────────────────────────
-    if (hasPendingUploads) {
+    // ── 3. Guardar la lista de fotos que sí se subieron ──────────────────────
+    if (pendientes > 0) {
+      const galleryIds = finalGallery.flatMap((i) => (i.status === "uploaded" ? [i.publicId] : []))
       try {
-        const imgResult = await updateProductImages(productId, {
-          cover_image: finalCoverPublicId || null,
-          gallery_images: finalGalleryIds,
-        })
-        if (imgResult.error) failures.push(imgResult.error)
+        const res = await updateProductImages(productId, { cover_image: finalCoverId, gallery_images: galleryIds })
+        if (res.error) failures.push(res.error)
+        else setPersisted({ cover: finalCoverId, gallery: galleryIds })
       } catch {
-        failures.push("no se pudieron guardar las fotos (se cortó la conexión)")
+        failures.push("no se pudo guardar la lista de fotos (se cortó la conexión)")
       }
     }
 
     setLoading(false)
 
-    const savedLabel = product ? "Producto actualizado" : "Producto creado"
     if (failures.length > 0) {
-      // El producto ya está guardado: avisar sin bloquear, se reintenta editando.
-      toast.error(`${savedLabel}, pero no se subieron algunas fotos: ${failures.join(", ")}. Editá el producto para reintentar.`, { id: aviso })
-    } else if (finalSlug !== slug) {
-      toast.success(`${savedLabel}. Su link quedó como /${finalSlug}`, { id: aviso })
-    } else {
-      toast.success(savedLabel, { id: aviso })
+      // El producto ya quedó guardado. Se queda en la página con las fotos que
+      // faltan como pendientes: "Guardar" reintenta solo esas.
+      const fotos = (cover.status === "pending" && finalCover.status === "pending" ? 1 : 0) +
+        finalGallery.filter((i) => i.status === "pending").length
+      const detalle =
+        fotos === 0 ? "no se guardó la lista de fotos" : fotos === 1 ? "no se subió 1 foto" : `no se subieron ${fotos} fotos`
+      toast.error(`${label}, pero ${detalle} (${failures[0]}). Tocá Guardar para reintentar.`, {
+        id: aviso,
+        duration: 10_000,
+      })
+      return
     }
+
+    toast.success(finalSlug !== slug ? `${label}. Su link quedó como /${finalSlug}` : label, { id: aviso })
     markClean()
     router.push("/panel/productos")
   }

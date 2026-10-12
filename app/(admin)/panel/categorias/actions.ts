@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { requireStoreContext } from "@/lib/auth/session"
 import { eq } from "drizzle-orm"
 import { dbErrorCode, schema } from "@/lib/db"
-import { belongsToStore, destroyAssets, type UploadOutcome, storeAssetFolder, uploadImage } from "@/lib/media"
+import { belongsToStore, destroyAssets } from "@/lib/media"
 import { ensureUniqueSlug, describeWriteError } from "@/lib/slug-server"
 
 const { categories } = schema
@@ -87,16 +87,4 @@ export async function deleteCategory(id: string) {
   revalidatePath("/panel/categorias")
   revalidatePath("/panel/dashboard")
   return { success: true }
-}
-
-export async function uploadCategoryImage(formData: FormData): Promise<UploadOutcome> {
-  const { store } = await requireStoreContext()
-  const file = formData.get("file") as File
-  const slug = formData.get("slug") as string
-
-  if (!file || !slug) {
-    return { error: "Elegí una foto y escribí el nombre antes de subirla" }
-  }
-
-  return uploadImage(file, storeAssetFolder(store.id, "categories"), slug)
 }

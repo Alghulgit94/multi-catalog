@@ -7,9 +7,9 @@ import { toast } from "sonner"
 import type { Category } from "@/lib/types-catalog"
 import { toAssetVersion } from "@/lib/types-catalog"
 import { buildImageUrl } from "@/lib/media-urls"
-import { prepararImagen } from "@/lib/image-prep"
+import { subirFoto } from "@/lib/upload-client"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
-import { createCategory, updateCategory, uploadCategoryImage } from "./actions"
+import { createCategory, updateCategory } from "./actions"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dropzone } from "@/components/panel/dropzone"
@@ -57,10 +57,7 @@ function CategoriaFormInner({ category, onDiscard }: Props & { onDiscard: () => 
       }
       setUploadingImage(true)
       try {
-        const fd = new FormData()
-        fd.append("file", await prepararImagen(file))
-        fd.append("slug", slug)
-        const result = await uploadCategoryImage(fd)
+        const result = await subirFoto({ file, tipo: "categoria", slug })
         if (!result.success) {
           toast.error(result.error)
         } else {

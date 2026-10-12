@@ -20,12 +20,11 @@ import {
   guardarTienda,
   guardarWhatsapp,
   quitarLogo,
-  subirLogo,
   verificarSlug,
 } from "@/app/registro/actions"
 import { mensajeDeError } from "@/lib/onboarding/mensajes"
 import { ONBOARDING_MOCK, mockApi } from "@/lib/onboarding/mock-api"
-import { prepararImagen } from "@/lib/image-prep"
+import { subirFoto } from "@/lib/upload-client"
 import { PhonePreview } from "./PhonePreview"
 
 export interface OnboardingInicial {
@@ -48,7 +47,7 @@ interface Props {
 
 const api = ONBOARDING_MOCK
   ? mockApi
-  : { verificarSlug, guardarTienda, guardarWhatsapp, guardarPlan, subirLogo, quitarLogo, crearCuenta, crearTiendaConSesion }
+  : { verificarSlug, guardarTienda, guardarWhatsapp, guardarPlan, quitarLogo, crearCuenta, crearTiendaConSesion }
 
 const STORAGE_KEY = "katalo_onboarding"
 const SALIDA_MS = 160
@@ -232,13 +231,17 @@ export function OnboardingFlow({ inicial, sesion, googleHabilitado, errorInicial
     setSubiendo(true)
     setError(null)
     try {
-      // Un logo no necesita más de 800 px: la foto del celular se achica antes de subirla.
-      const liviana = await prepararImagen(file, 800)
-      const fd = new FormData()
-      fd.append("logo", liviana)
-      const r = await api.subirLogo(fd)
-      if (!r.ok) return setError(r.error)
-      setLogoUrl(r.url)
+      if (ONBOARDING_MOCK) {
+        const fd = new FormData()
+        fd.append("logo", file)
+        const r = await mockApi.subirLogo(fd)
+        if (!r.ok) return setError(r.error)
+        return setLogoUrl(r.url)
+      }
+      // Por /api/media (no server action): se achica a 800 px antes de subir.
+      const r = await subirFoto({ file, tipo: "logo" })
+      if (!r.success) return setError(r.error)
+      setLogoUrl(r.secure_url)
     } catch {
       setError("No pudimos subir el logo. Revisá tu conexión y probá de nuevo.")
     } finally {

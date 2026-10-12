@@ -6,7 +6,7 @@ import { APIError } from "better-auth/api"
 import { auth } from "@/lib/auth/server"
 import { getSession, getStoreContext } from "@/lib/auth/session"
 import { getImageUrl } from "@/lib/media-urls"
-import { destroyDraftAsset, uploadImage } from "@/lib/media"
+import { destroyDraftAsset } from "@/lib/media"
 import { getDraft, saveDraft, setDraftLogo } from "@/lib/onboarding/draft"
 import { crearTiendaDesdeBorrador, slugDisponible, validarBorrador } from "@/lib/onboarding/finalize"
 import { cuentaSchema, planSchema, tiendaSchema, whatsappSchema } from "@/lib/onboarding/schemas"
@@ -15,7 +15,6 @@ type Ok<T = object> = { ok: true } & T
 type Fail = { ok: false; error: string }
 
 const ERROR_GENERICO = "No pudimos guardar tus datos. Probá de nuevo."
-const LOGO_MAX_BYTES = 3 * 1024 * 1024
 
 /** Limita cuántos borradores nuevos puede abrir una misma IP (en memoria, best-effort). */
 const intentos = new Map<string, { n: number; desde: number }>()
@@ -65,22 +64,6 @@ export async function guardarPlan(input: { plan: string }): Promise<Ok | Fail> {
   if (!parsed.success) return { ok: false, error: "Elegí un plan válido" }
   if (!(await guardar(parsed.data))) return { ok: false, error: ERROR_GENERICO }
   return { ok: true }
-}
-
-export async function subirLogo(formData: FormData): Promise<Ok<{ url: string }> | Fail> {
-  const file = formData.get("logo")
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Elegí una imagen" }
-  if (!file.type.startsWith("image/")) return { ok: false, error: "El archivo tiene que ser una imagen" }
-  if (file.size > LOGO_MAX_BYTES) return { ok: false, error: "La imagen pesa más de 3 MB" }
-
-  const draft = await getDraft()
-  if (!draft) return { ok: false, error: "Tu sesión de registro venció. Volvé al primer paso." }
-
-  const res = await uploadImage(file, `drafts/${draft.id}`, "logo")
-  if (!res.success) return { ok: false, error: "No pudimos subir el logo. Probá con otra imagen." }
-
-  await setDraftLogo(draft.id, res.public_id)
-  return { ok: true, url: urlLogo(res.public_id, true) }
 }
 
 export async function quitarLogo(): Promise<Ok | Fail> {
