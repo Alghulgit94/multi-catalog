@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useState } from "react"
 import { Menu } from "lucide-react"
 import { LogoKatalo } from "@/components/landing/ui/LogoKatalo"
@@ -18,7 +19,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="min-h-dvh bg-sidebar">
+    <div
+      className="min-h-dvh bg-sidebar"
+      style={{ "--sidebar-w": isCollapsed ? "64px" : "240px" } as React.CSSProperties}
+    >
       {/* Escritorio */}
       <aside
         className={cn(

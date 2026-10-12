@@ -22,16 +22,17 @@ export function UnsavedChangesBar({
   saveLabel?: string
   onDiscard: () => void
 }) {
+  if (!visible && !saving) return null
+
   return (
-    <div className="pointer-events-none sticky top-16 z-20 h-0 md:top-4" aria-live="polite">
+    // Fija arriba y centrada en el área de contenido (--sidebar-w lo define PanelShell).
+    <div aria-live="polite">
       <div
         className={cn(
-          "pointer-events-auto absolute left-1/2 flex w-max max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-2 rounded-[14px] bg-tinta py-1.5 pr-1.5 pl-4 text-white shadow-xl transition-all duration-200",
-          visible || saving ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
+          "fixed top-[68px] left-1/2 z-40 flex w-max max-w-[calc(100vw-24px)] -translate-x-1/2 animate-in items-center gap-2 rounded-[14px] bg-tinta py-1.5 pr-1.5 pl-4 text-white shadow-xl ring-1 ring-white/10 fade-in-0 slide-in-from-top-2 md:top-4 md:left-[calc(50%+var(--sidebar-w,0px)/2)]"
         )}
         role="region"
         aria-label="Cambios sin guardar"
-        hidden={!visible && !saving}
       >
         <span className="mr-2 text-sm font-semibold">{message}</span>
         <button

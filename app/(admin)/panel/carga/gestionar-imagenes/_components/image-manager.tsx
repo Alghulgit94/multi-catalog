@@ -165,7 +165,7 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
 
   return (
     <div className="mt-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <ProductListPanel
           products={displayProducts}
           selectedId={selectedId}

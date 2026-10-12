@@ -16,13 +16,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es-PY" className={`${bricolage.variable} ${figtree.variable}`} suppressHydrationWarning>
-      <head>
-        {/* Material Symbols for the merchant panel */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body>{children}</body>
     </html>
   )

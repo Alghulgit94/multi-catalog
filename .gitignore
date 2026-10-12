@@ -85,3 +85,6 @@ docs/especificacion-etapa-1.md
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+
+# Capturas de referencia de terceros (Shopify, Shopperly): solo locales
+uiexamples/

@@ -4,9 +4,26 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
-import { PLATFORM_NAME } from "@/lib/catalog-config"
+import { LogoKatalo } from "@/components/landing/ui/LogoKatalo"
+import { Nanduti } from "@/components/landing/ui/Nanduti"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+/** Mensajes de Better Auth en voseo. */
+function mensajeDeError(code?: string, message?: string) {
+  switch (code) {
+    case "INVALID_EMAIL_OR_PASSWORD":
+      return "El email o la contraseña no coinciden. Revisalos y probá de nuevo."
+    case "TOO_MANY_REQUESTS":
+      return "Hiciste muchos intentos. Esperá un minuto y probá de nuevo."
+    case "EMAIL_NOT_VERIFIED":
+      return "Todavía no verificaste tu email. Revisá tu bandeja de entrada."
+    default:
+      return message ? "No pudimos iniciar sesión. Probá de nuevo." : "No pudimos iniciar sesión."
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,7 +44,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message ?? "No se pudo iniciar sesión")
+      setError(mensajeDeError(error.code, error.message))
       setLoading(false)
       return
     }
@@ -37,22 +54,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#FDFDFC" }}>
-      <div className="w-full max-w-[450px]">
-        <div className="bg-white shadow-xl rounded-xl p-8 md:p-10 border border-slate-100">
-          <div className="flex flex-col items-center mb-8">
-            <h1 className="text-2xl font-bold text-slate-900 text-center">Acceso al Panel</h1>
-            <p className="text-slate-500 text-sm text-center mt-2">
-              Ingresá tus credenciales para administrar tu catálogo
-            </p>
-          </div>
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-fondo-alterno px-4 py-10">
+      {/* Ñandutí de cierre, decorativo */}
+      <div className="pointer-events-none absolute -right-24 -bottom-24 size-[420px] opacity-40 sm:-right-16 sm:-bottom-16" aria-hidden>
+        <Nanduti variante="cierre" className="h-full w-full" />
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 block" htmlFor="email">
-                Correo electrónico
+      <div className="relative w-full max-w-[420px]">
+        <Link href="/" className="mb-8 flex justify-center" aria-label="Ir a Katalo">
+          <LogoKatalo variant="horizontal" height={32} />
+        </Link>
+
+        <div className="rounded-[20px] border border-linea bg-white p-6 sm:p-8">
+          <h1 className="font-titulos text-[28px] leading-tight font-bold tracking-[-0.02em] text-tinta">
+            Ingresá a tu panel
+          </h1>
+          <p className="mt-1.5 text-[15px] text-texto-secundario">Cargá tus productos y compartí tu catálogo.</p>
+
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-tinta" htmlFor="email">
+                Email
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -60,71 +84,60 @@ export default function LoginPage() {
                 placeholder="tu@email.com"
                 required
                 disabled={loading}
-                className="block w-full px-3 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm disabled:opacity-50"
+                className="h-12"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 block" htmlFor="password">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-tinta" htmlFor="password">
                 Contraseña
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="Tu contraseña"
                   required
                   disabled={loading}
-                  className="block w-full pl-3 pr-12 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm disabled:opacity-50"
+                  className="h-12 pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-texto-secundario hover:text-tinta"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff className="size-5" strokeWidth={1.5} /> : <Eye className="size-5" strokeWidth={1.5} />}
                 </button>
               </div>
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600">
-              <input
-                type="checkbox"
-                name="remember-me"
-                defaultChecked
-                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-              />
-              Recordarme
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-tinta">
+              <input type="checkbox" name="remember-me" defaultChecked className="size-[18px] rounded-[5px] accent-primario" />
+              Mantener la sesión iniciada
             </label>
 
             {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</div>
+              <p role="alert" className="rounded-[12px] bg-error-fondo px-4 py-3 text-sm text-[#a82727]">
+                {error}
+              </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
-              style={{ backgroundColor: "#537688" }}
-            >
-              {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
-            </button>
+            <Button type="submit" size="lg" disabled={loading} className="w-full">
+              {loading && <Loader2 className="animate-spin" />}
+              {loading ? "Ingresando…" : "Ingresar"}
+            </Button>
           </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            ¿Todavía no tenés tienda?{" "}
-            <Link href="/registro" className="font-medium text-slate-900 hover:underline">
-              Registrate
-            </Link>
-          </p>
-
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-400 uppercase tracking-widest">{PLATFORM_NAME}</p>
-          </div>
         </div>
+
+        <p className="mt-6 text-center text-[15px] text-texto-secundario">
+          ¿Todavía no tenés tu catálogo?{" "}
+          <Link href="/registro" className="font-semibold text-primario hover:underline">
+            Crear mi catálogo gratis
+          </Link>
+        </p>
       </div>
     </div>
   )

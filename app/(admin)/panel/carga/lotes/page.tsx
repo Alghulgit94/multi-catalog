@@ -25,7 +25,7 @@ export default async function CargaLotesPage() {
         actions={<StatusBadge tone="aviso">En preparación</StatusBadge>}
       />
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <FormSection title="Nueva planilla" description="Elegí el período y el archivo.">
           <CargaForm />
         </FormSection>
