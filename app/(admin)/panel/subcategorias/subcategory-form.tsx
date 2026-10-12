@@ -58,7 +58,14 @@ function SubcategoryFormInner({ subcategory, categories, onDiscard }: Props & { 
     fd.set("category_id", categoryId)
     fd.set("is_active", form.querySelector<HTMLInputElement>('[name="is_active"]')?.checked ? "true" : "false")
 
-    const result = subcategory ? await updateSubcategory(subcategory.id, fd) : await createSubcategory(fd)
+    let result: Awaited<ReturnType<typeof createSubcategory>>
+    try {
+      result = subcategory ? await updateSubcategory(subcategory.id, fd) : await createSubcategory(fd)
+    } catch {
+      setLoading(false)
+      toast.error("Se cortó la conexión. Revisá tu internet y probá de nuevo.")
+      return
+    }
 
     setLoading(false)
     if (result.error) {

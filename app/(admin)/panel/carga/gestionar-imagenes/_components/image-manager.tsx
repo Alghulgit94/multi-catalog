@@ -96,10 +96,17 @@ export function ImageManager({ products, categories }: ImageManagerProps) {
     if (!edit) return false
 
     setSaveStatus("saving")
-    const result = await updateProductImages(id, {
-      cover_image: edit.coverPublicId,
-      gallery_images: edit.galleryItems.map((g) => g.publicId),
-    })
+    let result: Awaited<ReturnType<typeof updateProductImages>>
+    try {
+      result = await updateProductImages(id, {
+        cover_image: edit.coverPublicId,
+        gallery_images: edit.galleryItems.map((g) => g.publicId),
+      })
+    } catch {
+      setSaveStatus("error")
+      toast.error("Se cortó la conexión. Revisá tu internet y probá de nuevo.")
+      return false
+    }
 
     if ("error" in result) {
       setSaveStatus("error")

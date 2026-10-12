@@ -27,7 +27,7 @@ export function CategoriasPageClient({ categories }: Props) {
 
   async function handleDelete(id: string) {
     setDeleting(id)
-    const result = await deleteCategory(id)
+    const result = await deleteCategory(id).catch(() => ({ error: "Se cortó la conexión. Revisá tu internet y probá de nuevo." }))
     setDeleting(null)
     if (result.error) {
       toast.error(result.error)

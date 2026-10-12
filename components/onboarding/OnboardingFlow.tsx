@@ -25,6 +25,7 @@ import {
 } from "@/app/registro/actions"
 import { mensajeDeError } from "@/lib/onboarding/mensajes"
 import { ONBOARDING_MOCK, mockApi } from "@/lib/onboarding/mock-api"
+import { prepararImagen } from "@/lib/image-prep"
 import { PhonePreview } from "./PhonePreview"
 
 export interface OnboardingInicial {
@@ -230,12 +231,19 @@ export function OnboardingFlow({ inicial, sesion, googleHabilitado, errorInicial
     if (!file) return
     setSubiendo(true)
     setError(null)
-    const fd = new FormData()
-    fd.append("logo", file)
-    const r = await api.subirLogo(fd)
-    setSubiendo(false)
-    if (!r.ok) return setError(r.error)
-    setLogoUrl(r.url)
+    try {
+      // Un logo no necesita más de 800 px: la foto del celular se achica antes de subirla.
+      const liviana = await prepararImagen(file, 800)
+      const fd = new FormData()
+      fd.append("logo", liviana)
+      const r = await api.subirLogo(fd)
+      if (!r.ok) return setError(r.error)
+      setLogoUrl(r.url)
+    } catch {
+      setError("No pudimos subir el logo. Revisá tu conexión y probá de nuevo.")
+    } finally {
+      setSubiendo(false)
+    }
   }
 
   async function sacarLogo() {
@@ -480,7 +488,7 @@ export function OnboardingFlow({ inicial, sesion, googleHabilitado, errorInicial
                       <input
                         id="logo"
                         type="file"
-                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        accept="image/*"
                         className="sr-only"
                         disabled={subiendo}
                         onChange={(e) => {

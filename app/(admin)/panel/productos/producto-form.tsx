@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import type { Product, Category, Subcategory } from "@/lib/types-catalog"
 import { toAssetVersion, MAX_GALLERY_IMAGES as MAX_GALLERY } from "@/lib/types-catalog"
 import { buildImageUrl } from "@/lib/media-urls"
+import { prepararImagen } from "@/lib/image-prep"
+import type { UploadOutcome } from "@/lib/media"
 import { createProduct, updateProduct, updateProductImages, uploadProductImage } from "./actions"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
 import { Input } from "@/components/ui/input"
@@ -88,10 +90,6 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
     return () => { objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)) }
   }, [])
 
-  function getSelectedCategorySlug() {
-    return categories.find((c) => c.id === selectedCategoryId)?.slug || "general"
-  }
-
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!slugEdited) {
       setSlug(slugify(e.target.value))
@@ -146,6 +144,19 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
 
   // ─── Submit ───────────────────────────────────────────────────────────────
 
+  /**
+   * Achica la foto y la sube. Nunca lanza: si se corta la conexión devuelve
+   * { error }, para que el producto (ya guardado) no quede a medias sin aviso.
+   */
+  async function subirFoto(file: File, productSlug: string, tipo: "cover" | "gallery", index?: number): Promise<UploadOutcome> {
+    try {
+      const liviana = await prepararImagen(file)
+      return await uploadProductImage(liviana, productSlug, tipo, index)
+    } catch {
+      return { error: "se cortó la conexión" }
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget   // capturar ANTES de cualquier await
@@ -194,13 +205,21 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
     if (form.querySelector<HTMLInputElement>('[name="is_active"]')?.checked) fd.set("is_active", "true")
     if (form.querySelector<HTMLInputElement>('[name="is_visible"]')?.checked) fd.set("is_visible", "true")
 
-    const saved = product
-      ? await updateProduct(product.id, fd)
-      : await createProduct(fd)
+    const pendientes = (cover.status === "pending" ? 1 : 0) + galleryItems.filter((i) => i.status === "pending").length
+    const aviso = toast.loading(product ? "Guardando cambios…" : "Guardando producto…")
+
+    let saved: Awaited<ReturnType<typeof createProduct>>
+    try {
+      saved = product ? await updateProduct(product.id, fd) : await createProduct(fd)
+    } catch {
+      setLoading(false)
+      toast.error("Se cortó la conexión y no se guardó el producto. Revisá tu internet y probá de nuevo.", { id: aviso })
+      return
+    }
 
     if (saved.error || !saved.id) {
       setLoading(false)
-      toast.error(saved.error || "No pudimos guardar el producto. Probá de nuevo.")
+      toast.error(saved.error || "No pudimos guardar el producto. Probá de nuevo.", { id: aviso })
       return
     }
 
@@ -210,21 +229,14 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
     if (finalSlug !== slug) setSlug(finalSlug)
 
     // ── 2. Subir las imágenes pendientes con el slug definitivo ──────────────
-    const finalCategorySlug = getSelectedCategorySlug()
+    // Portada y galería en paralelo, ya achicadas en el navegador.
     const failures: string[] = []
+    if (pendientes > 0) {
+      toast.loading(pendientes === 1 ? "Subiendo la foto…" : `Subiendo ${pendientes} fotos…`, { id: aviso })
+    }
 
     let finalCoverPublicId = uploadedCoverId
-
-    if (cover.status === "pending") {
-      const result = await uploadProductImage(cover.file, finalSlug, "cover")
-      if (result.error) {
-        failures.push(`portada (${result.error})`)
-      } else {
-        URL.revokeObjectURL(cover.preview)
-        finalCoverPublicId = result.public_id!
-        setCover({ status: "uploaded", publicId: result.public_id!, preview: result.secure_url! })
-      }
-    }
+    const coverUpload = cover.status === "pending" ? subirFoto(cover.file, finalSlug, "cover") : null
 
     type GalleryUploadResult =
       | { ok: true; index: number; item: GalleryItem; publicId: string; url: string }
@@ -234,13 +246,24 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
       galleryItems.map((item, i): Promise<GalleryUploadResult> =>
         item.status === "uploaded"
           ? Promise.resolve({ ok: true, index: i, item, publicId: item.publicId, url: item.preview })
-          : uploadProductImage(item.file, finalSlug, "gallery", i).then((result) =>
+          : subirFoto(item.file, finalSlug, "gallery", i).then((result) =>
               result.error
                 ? { ok: false, index: i, error: result.error }
                 : { ok: true, index: i, item, publicId: result.public_id!, url: result.secure_url! }
             )
       )
     )
+
+    if (coverUpload && cover.status === "pending") {
+      const result = await coverUpload
+      if (result.error) {
+        failures.push(`portada (${result.error})`)
+      } else {
+        URL.revokeObjectURL(cover.preview)
+        finalCoverPublicId = result.public_id!
+        setCover({ status: "uploaded", publicId: result.public_id!, preview: result.secure_url! })
+      }
+    }
 
     galleryResults.forEach((r) => {
       if (!r.ok) failures.push(`imagen ${r.index + 1} (${r.error})`)
@@ -260,11 +283,15 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
 
     // ── 3. Persistir los public_id definitivos ───────────────────────────────
     if (hasPendingUploads) {
-      const imgResult = await updateProductImages(productId, {
-        cover_image: finalCoverPublicId || null,
-        gallery_images: finalGalleryIds,
-      })
-      if (imgResult.error) failures.push(imgResult.error)
+      try {
+        const imgResult = await updateProductImages(productId, {
+          cover_image: finalCoverPublicId || null,
+          gallery_images: finalGalleryIds,
+        })
+        if (imgResult.error) failures.push(imgResult.error)
+      } catch {
+        failures.push("no se pudieron guardar las fotos (se cortó la conexión)")
+      }
     }
 
     setLoading(false)
@@ -272,11 +299,11 @@ function ProductoFormInner({ product, categories, subcategories, onDiscard }: Pr
     const savedLabel = product ? "Producto actualizado" : "Producto creado"
     if (failures.length > 0) {
       // El producto ya está guardado: avisar sin bloquear, se reintenta editando.
-      toast.error(`${savedLabel}, pero no se subieron algunas fotos: ${failures.join(", ")}. Editá el producto para reintentar.`)
+      toast.error(`${savedLabel}, pero no se subieron algunas fotos: ${failures.join(", ")}. Editá el producto para reintentar.`, { id: aviso })
     } else if (finalSlug !== slug) {
-      toast.success(`${savedLabel}. Su link quedó como /${finalSlug}`)
+      toast.success(`${savedLabel}. Su link quedó como /${finalSlug}`, { id: aviso })
     } else {
-      toast.success(savedLabel)
+      toast.success(savedLabel, { id: aviso })
     }
     markClean()
     router.push("/panel/productos")

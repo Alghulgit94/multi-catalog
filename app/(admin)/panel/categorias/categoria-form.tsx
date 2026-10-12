@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import type { Category } from "@/lib/types-catalog"
 import { toAssetVersion } from "@/lib/types-catalog"
 import { buildImageUrl } from "@/lib/media-urls"
+import { prepararImagen } from "@/lib/image-prep"
 import { slugify, sanitizeSlugInput } from "@/lib/slug"
 import { createCategory, updateCategory, uploadCategoryImage } from "./actions"
 import { Input } from "@/components/ui/input"
@@ -55,16 +56,21 @@ function CategoriaFormInner({ category, onDiscard }: Props & { onDiscard: () => 
         return
       }
       setUploadingImage(true)
-      const fd = new FormData()
-      fd.append("file", file)
-      fd.append("slug", slug)
-      const result = await uploadCategoryImage(fd)
-      setUploadingImage(false)
-      if (!result.success) {
-        toast.error(result.error)
-      } else {
-        setImagePath(result.public_id)
-        setImagePreview(result.secure_url)
+      try {
+        const fd = new FormData()
+        fd.append("file", await prepararImagen(file))
+        fd.append("slug", slug)
+        const result = await uploadCategoryImage(fd)
+        if (!result.success) {
+          toast.error(result.error)
+        } else {
+          setImagePath(result.public_id)
+          setImagePreview(result.secure_url)
+        }
+      } catch {
+        toast.error("No pudimos subir la foto. Revisá tu internet y probá de nuevo.")
+      } finally {
+        setUploadingImage(false)
       }
     },
     [slug]
@@ -77,7 +83,14 @@ function CategoriaFormInner({ category, onDiscard }: Props & { onDiscard: () => 
     fd.set("slug", slug)
     fd.set("image_path", imagePath)
 
-    const result = category ? await updateCategory(category.id, fd) : await createCategory(fd)
+    let result: { error?: string; success?: boolean }
+    try {
+      result = category ? await updateCategory(category.id, fd) : await createCategory(fd)
+    } catch {
+      setLoading(false)
+      toast.error("Se cortó la conexión. Revisá tu internet y probá de nuevo.")
+      return
+    }
 
     setLoading(false)
     if (result.error) {

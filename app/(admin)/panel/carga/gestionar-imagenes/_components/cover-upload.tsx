@@ -4,6 +4,7 @@ import { useState, DragEvent, ChangeEvent, useRef } from "react"
 import { ImagePlus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { uploadProductImage } from "../../../productos/actions"
+import { prepararImagen } from "@/lib/image-prep"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -24,12 +25,14 @@ export function CoverUpload({ coverPublicId, coverPreview, productSlug, onUpdate
   async function uploadFile(file: File) {
     setIsUploading(true)
     try {
-      const result = await uploadProductImage(file, productSlug, "cover")
+      const result = await uploadProductImage(await prepararImagen(file), productSlug, "cover")
       if ("error" in result && result.error) {
         toast.error(result.error)
       } else if (result.success) {
         onUpdate({ coverPublicId: result.public_id, coverPreview: result.secure_url })
       }
+    } catch {
+      toast.error("No pudimos subir la foto. Revisá tu internet y probá de nuevo.")
     } finally {
       setIsUploading(false)
     }

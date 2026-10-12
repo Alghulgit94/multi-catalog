@@ -59,7 +59,7 @@ export function ProductosPageClient({ products, categories, extraActions }: Prop
 
   async function handleDelete(id: string) {
     setDeleting(id)
-    const result = await deleteProduct(id)
+    const result = await deleteProduct(id).catch(() => ({ error: "Se cortó la conexión. Revisá tu internet y probá de nuevo." }))
     setDeleting(null)
     if (result.error) toast.error(result.error)
     else {
@@ -70,7 +70,7 @@ export function ProductosPageClient({ products, categories, extraActions }: Prop
 
   async function handleToggle(id: string, current: boolean) {
     setToggling(id)
-    const result = await toggleProductActive(id, !current)
+    const result = await toggleProductActive(id, !current).catch(() => ({ error: "Se cortó la conexión. Revisá tu internet y probá de nuevo." }))
     setToggling(null)
     if (result.error) toast.error(result.error)
     else {

@@ -65,7 +65,7 @@ export type UploadOutcome =
 
 /** Sube un archivo a R2. `assetFolder` debe salir de storeAssetFolder() o ser `drafts/{id}`. */
 export async function uploadImage(file: File, assetFolder: string, publicId: string): Promise<UploadOutcome> {
-  if (!ALLOWED_TYPES.includes(file.type)) return { error: "Formato de imagen no soportado" }
+  if (!ALLOWED_TYPES.includes(file.type)) return { error: "Ese formato de foto no se puede usar. Probá con una JPG, PNG o WebP." }
   if (file.size > MAX_UPLOAD_BYTES) return { error: "La imagen pesa más de 15 MB" }
 
   const key = `${assetFolder}/${publicId}`
